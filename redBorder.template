@@ -76,7 +76,7 @@
 		},
 
 		"AWSRegion2AMI" : {
-			"eu-west-1"      : { "HVM64" : "ami-5867352f" },
+			"eu-west-1"      : { "HVM64" : "ami-3e481749" },
 			"eu-central-1"   : { "HVM64" : "ami-7e2c6309" },
 			"us-east-1"      : { "HVM64" : "ami-7e2c6309" },
 			"us-west-2"      : { "HVM64" : "ami-7e2c6309" },
@@ -243,7 +243,9 @@
 						"Action" : [ 
 							"ec2:CreateNetworkInterface", 
 							"ec2:AttachNetworkInterface",
-							"ec2:ModifyNetworkInterfaceAttribute" ],
+							"ec2:ModifyNetworkInterfaceAttribute",
+							"ec2:DescribeVpcs",
+							"ec2:DescribeInstances" ],
 						"Effect" : "Allow",            
 						"Resource" : "*"            
 					},{
@@ -253,7 +255,7 @@
 							[ "", [ "arn:aws:s3:::", 
 							{ "Ref" : "S3Bucket" }, "/*" ] ] },
 							{ "Fn::Join" : 
-							[ "", [ "arn:aws:s3:::", 
+							[ "", [ "arn:aws:s3:::",
 							{ "Ref" : "S3Bucket" } ] ] } ]
 					},{
 						"Action" : [ "elasticache:Describe*" ],
@@ -277,8 +279,8 @@
 						"Resource" : "*"
 					},{
 						"Effect": "Allow",
-						"Action" : [ "sqs:*" ],
-						"Resource" : "*"
+						"Action" : [ "sqs:ReceiveMessage", "sqs:DeleteMessage" ],
+						"Resource" : [ { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] } ]
 					},{
 						"Effect": "Allow",
 						"Action" : [ "logs:*" ],
@@ -418,26 +420,33 @@
 				} ]
 			}
 		},
-		"WebLoadBalancerDNSNameMaster" : {
-			"Type" : "AWS::Route53::RecordSet",
-			"Condition" : "masterRoleCreation",
-			"DependsOn" : "masterGroup",
+		
+		"PublicHostedZone" : { 
+			"Type" : "AWS::Route53::HostedZone",
 			"Properties" : {
-				"HostedZoneName" : { "Fn::Join" : [ "", [ { "Ref" : "CDOMAIN" }, "." ] ] },
-				"Name" : { "Ref" : "CDOMAIN" },
-				"AliasTarget" : {
-					"HostedZoneId" : { "Fn::GetAtt" : [ "WebElasticLoadBalancer", "CanonicalHostedZoneNameID" ] }, 
-					"DNSName" : { "Fn::GetAtt" : [ "WebElasticLoadBalancer", "DNSName" ] }
+				"HostedZoneConfig" : {
+					"Comment" : "Public Hosted Zone created by Cloudformation"
 				},
-				"Type" : "A"
+				"Name" : { "Fn::Join" : [ "", [ { "Ref" : "CDOMAIN" }, "." ] ] }
 			}
 		},
-		"WebLoadBalancerDNSNameCore" : {
-			"Type" : "AWS::Route53::RecordSet",
-			"Condition" : "corezkRoleCreation",
-			"DependsOn" : "corezkGroup",
+		"PrivateHostedZone" : {
+			"Type" : "AWS::Route53::HostedZone",
 			"Properties" : {
-				"HostedZoneName" : { "Fn::Join" : [ "", [ { "Ref" : "CDOMAIN" }, "." ] ] },
+				"HostedZoneConfig" : {
+					"Comment" : "Private Hosted Zone created by Cloudformation"
+				},
+				"Name" : { "Fn::Join" : [ "", [ { "Ref" : "CDOMAIN" }, "." ] ] },
+				"VPCs" : [ {
+					"VPCId" : { "Ref" : "VPC" }, 
+					"VPCRegion" : { "Ref" : "AWS::Region" }
+				} ]
+			}
+		},
+		"WebLoadBalancerDNSName" : {
+			"Type" : "AWS::Route53::RecordSet",
+			"Properties" : {
+				"HostedZoneId" : { "Ref" : "PublicHostedZone" },
 				"Name" : { "Ref" : "CDOMAIN" },
 				"AliasTarget" : {
 					"HostedZoneId" : { "Fn::GetAtt" : [ "WebElasticLoadBalancer", "CanonicalHostedZoneNameID" ] }, 
@@ -589,9 +598,14 @@
 					"NODEROLE=master\n",
 					"#NODESERVICES=\n",
 					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
+					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
+					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
+					"VPCID=", { "Ref" : "VPC" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=masterGroup\n",
+					"LOGWATCHG=", { "Ref" : "AWS::StackName" }, "\n",
+					"SQSQUEUEURL=", { "Ref" : "SQSQueue" }, "\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
 					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
 					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
@@ -692,7 +706,10 @@
 					"NODEROLE=custom\n",
 					"#NODESERVICES=\n",
 					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
+					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
+					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
+					"VPCID=", { "Ref" : "VPC" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=customGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -780,7 +797,10 @@
 					"NODEROLE=webdruid\n",
 					"#NODESERVICES=\n",
 					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
+					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
+					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
+					"VPCID=", { "Ref" : "VPC" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=webdruidGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -893,7 +913,10 @@
 					"NODEROLE=corezk\n",
 					"NODESERVICES=\"rb-cloudwatch:1\"\n",
 					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
+					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
+					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
+					"VPCID=", { "Ref" : "VPC" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=corezkGroup\n",
 					"LOGWATCHG=", { "Ref" : "AWS::StackName" }, "\n",
@@ -998,7 +1021,10 @@
 					"NODEROLE=kafka\n",
 					"#NODESERVICES=\n",
 					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
+					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
+					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
+					"VPCID=", { "Ref" : "VPC" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=kafkaGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -1087,7 +1113,10 @@
 					"#!/bin/bash\n",
 					"NODEROLE=http2k\n",
 					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
+					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
+					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
+					"VPCID=", { "Ref" : "VPC" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=http2kGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -1188,7 +1217,10 @@
 					"NODEROLE=web\n",
 					"#NODESERVICES=\n",
 					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
+					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
+					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
+					"VPCID=", { "Ref" : "VPC" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=webGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -1301,7 +1333,10 @@
 					"NODEROLE=broker\n",
 					"#NODESERVICES=\n",
 					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
+					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
+					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
+					"VPCID=", { "Ref" : "VPC" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=brokerGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -1404,7 +1439,10 @@
 					"NODEROLE=middleManager\n",
 					"#NODESERVICES=\n",
 					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
+					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
+					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
+					"VPCID=", { "Ref" : "VPC" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=middlemanagerGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -1519,7 +1557,10 @@
 					"NODEROLE=historical\n",
 					"#NODESERVICES=\n",
 					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
+					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
+					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
+					"VPCID=", { "Ref" : "VPC" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=historicalGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -1621,7 +1662,10 @@
 					"NODEROLE=historical\n",
 					"#NODESERVICES=\n",
 					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
+					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
+					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
+					"VPCID=", { "Ref" : "VPC" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=historicalhotGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -1728,7 +1772,10 @@
 					"NODEROLE=samza\n",
 					"NODESERVICES=\n",
 					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
+					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
+					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
+					"VPCID=", { "Ref" : "VPC" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=samzaGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
