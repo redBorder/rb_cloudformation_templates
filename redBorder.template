@@ -34,6 +34,18 @@
 			"Type" : "String",
 			"Default" : "LB"
 		},
+		"UseRDS" : {
+			"Description" : "Indicates if you want to use AWS Relational Database Service for PostgreSQL or you prefer to use PostgreSQL provided by redBorder",
+			"Type" : "String",
+			"AllowedValues" : [ "true", "false" ],
+			"Default" : "false"
+		},
+		"UseElasticache" : {
+			"Description" : "Indicates if you want to use AWS Elasticache for Memcached or you prefer to use Memcached provided by redBorder",
+			"Type" : "String",
+			"AllowedValues" : [ "true", "false" ],
+			"Default" : "false"
+		},
 		"DBPassword": {
 			"NoEcho": "true",
 			"Description" : "The database admin account password",
@@ -71,12 +83,12 @@
 			"historical" :    { "small":"m3.large",       "medium":"c4.4xlarge",      "large":"c4.4xlarge"       },
 			"historicalhot" : { "small":"m3.large",       "medium":"c4.4xlarge",      "large":"c4.4xlarge"       },
 			"samza" :         { "small":"m4.4xlarge",     "medium":"c4.4xlarge",      "large":"c4.4xlarge"       },
-			"rds" :           { "small":"db.m3.2xlarge",   "medium":"db.m3.2xlarge",     "large":"db.r3.large"      },
+			"rds" :           { "small":"db.m3.2xlarge",  "medium":"db.m3.2xlarge",   "large":"db.r3.large"      },
 			"memcached" :     { "small":"cache.t2.small", "medium":"cache.m3.xlarge", "large":"cache.m3.2xlarge" }
 		},
 
 		"AWSRegion2AMI" : {
-			"eu-west-1"      : { "HVM64" : "ami-3e481749" },
+			"eu-west-1"      : { "HVM64" : "ami-b4257dc3" },
 			"eu-central-1"   : { "HVM64" : "ami-7e2c6309" },
 			"us-east-1"      : { "HVM64" : "ami-7e2c6309" },
 			"us-west-2"      : { "HVM64" : "ami-7e2c6309" },
@@ -122,6 +134,12 @@
 		},
 		"samzaRoleCreation" : {
 			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "samza" ] } ] } ]
+		},
+		"RDSCreation" : {
+			"Fn::Equals" : [ "true", { "Ref" : "UseRDS" } ]
+		},
+		"ElasticacheCreation" : {
+			"Fn::Equals" : [ "true", { "Ref" : "UseElasticache" } ]
 		}
 	},
 	
@@ -243,12 +261,10 @@
 						"Action" : [ 
 							"ec2:CreateNetworkInterface", 
 							"ec2:AttachNetworkInterface",
-							"ec2:ModifyNetworkInterfaceAttribute",
-							"ec2:DescribeVpcs",
-							"ec2:DescribeInstances" ],
-						"Effect" : "Allow",            
-						"Resource" : "*"            
-					},{
+							"ec2:ModifyNetworkInterfaceAttribute" ],
+						"Effect" : "Allow",
+						"Resource" : "*"
+					}, {
 						"Action" : "s3:*",
 						"Effect" : "Allow", 
 						"Resource" : [ { "Fn::Join" :
@@ -257,25 +273,28 @@
 							{ "Fn::Join" : 
 							[ "", [ "arn:aws:s3:::",
 							{ "Ref" : "S3Bucket" } ] ] } ]
-					},{
-						"Action" : [ "elasticache:Describe*" ],
-						"Effect" : "Allow",
-						"Resource" : "*"
-					},{
+					}, {
 						"Effect": "Allow",
 						"Action": [ "cloudformation:DescribeStackResource" ],
-						"Resource": "*"
+						"Resource": { "Fn::Join" : [ "", [ "arn:aws:cloudformation:", { "Ref" : "AWS::Region" }, ":", 
+									{ "Ref" : "AWS::AccountId" }, ":stack/", { "Ref" : "AWS::StackName" }, "/*"   ] ] }
 					},{
 						"Effect": "Allow",
-						"Action" : [ "cloudwatch:PutMetricData" ],
+						"Action" : [ "cloudwatch:PutMetricData", "cloudwatch:DescribeAlarms" ],
 						"Resource" : "*"
 					},{
 						"Effect": "Allow",
-						"Action" : [ "route53:*" ],
+						"Action" : [ "route53:ChangeResourceRecordSets", "route53:ListHostedZones" ],
+						"Resource" : [ { "Fn::Join" : [ "", [ "arn:aws:route53:::hostedzone/", { "Ref" : "PublicHostedZone" } ] ] }, 
+									   { "Fn::Join" : [ "", [ "arn:aws:route53:::hostedzone/", { "Ref" : "PrivateHostedZone" } ] ] } ]
+					},{
+						"Effect": "Allow",
+						"Action" : [ "route53:ListHostedZones", "route53:ChangeResourceRecordSets", "route53:GetHostedZone" ],
 						"Resource" : "*"
 					},{
 						"Effect": "Allow",
-						"Action" : [ "autoscaling:*" ],
+						"Action" : [ "autoscaling:TerminateInstanceInAutoscalingGroup", "autoscaling:DescribeAutoscalingGroups",
+									 "autoscaling:CompleteLifecycleAction" ],
 						"Resource" : "*"
 					},{
 						"Effect": "Allow",
@@ -289,6 +308,37 @@
 				},
 				"Roles" :  [ { "Ref" : "IAMRole" } ],
 				"Users" : [ { "Ref" : "IAMUser" } ]        
+			}
+		},
+		"IAMRoleLifecycleHook" : {
+			"Type" : "AWS::IAM::Role",
+			"Properties" : {
+				"AssumeRolePolicyDocument" : {
+					"Version" : "2012-10-17", 
+					"Statement" : [ {
+						"Effect" : "Allow", 
+						"Principal" : {
+							"Service" : [ "ec2.amazonaws.com", "autoscaling.amazonaws.com" ]
+						},
+						"Action" : [ "sts:AssumeRole" ]
+					} ]
+				},
+				"Path" : "/"
+			}
+		},
+		"IAMPolicyLifecycleHook" : {
+			"Type" : "AWS::IAM::Policy", 
+			"Properties" : {
+				"PolicyName" : "RB-CF-POLICY-FOR-LIFECYCLE-HOOKS", 
+				"PolicyDocument" :  {
+					"Version" : "2012-10-17",
+					"Statement": [ {
+						"Effect": "Allow",
+						"Action" : [ "sqs:*" ],
+						"Resource" : [ { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] } ]
+					} ]
+				},
+				"Roles" :  [ { "Ref" : "IAMRoleLifecycleHook" } ]
 			}
 		},
 		"S3Bucket" : {
@@ -305,9 +355,38 @@
 				"ReceiveMessageWaitTimeSeconds" : "20",
 				"VisibilityTimeout" : "30"
 			}
+		},
+		"SQSPolicy" : {
+			"Type" : "AWS::SQS::QueuePolicy",
+			"Properties" : {
+				"Queues" : [ { "Ref" : "SQSQueue" } ],
+				"PolicyDocument" : {
+					"Version":"2012-10-17",
+					"Statement":[ {
+						"Sid": { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "SQSQueue", "QueueName"  ] }, "-Policy" ] ] } ,
+						"Effect":"Allow",
+						"Principal":"*",
+						"Action":"sqs:SendMessage",
+						"Resource": { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] },
+						"Condition":{
+							"ArnEquals": { "aws:SourceArn" : { "Ref" : "SNSTopic" } }
+						}
+					} ]
+				}
+			}
 		}, 
+		"SNSTopic" : {
+			"Type" : "AWS::SNS::Topic", 
+			"Properties" : {
+				"Subscription" : [ {
+					"Protocol" : "sqs",
+					"Endpoint" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] }
+				} ]
+			}
+		},
 		"DBRDS" : {
 			"Type" : "AWS::RDS::DBInstance",
+			"Condition" : "RDSCreation",
 			"Properties" : {
 				"AllocatedStorage" : "50",
 				"DBInstanceClass" : { "Fn::FindInMap" : [ "InstanceTypeMap", "rds", { "Ref" : "InstanceSize" } ] },
@@ -325,13 +404,15 @@
 		},
 		"DBSubnetGroup" : {
 			"Type" : "AWS::RDS::DBSubnetGroup",
+			"Condition" : "RDSCreation",
 			"Properties" : {
 				"DBSubnetGroupDescription" : "redBorder RDS subnet group",
 				"SubnetIds" : [ { "Ref" : "PrivateSubnet" }, { "Ref" : "BackupSubnet" } ]
 			}
 		}, 
 		"Memcached" : {
-			"Type" : "AWS::ElastiCache::CacheCluster", 
+			"Type" : "AWS::ElastiCache::CacheCluster",
+			"Condition" : "ElasticacheCreation",
 			"Properties" : {
 				"Engine" : "memcached", 
 				"PreferredAvailabilityZone" : { "Fn::GetAtt" : [ "PrivateSubnet", "AvailabilityZone" ] },
@@ -343,6 +424,7 @@
 		},
 		"MemcachedSubnetGroup" : {
 			"Type" : "AWS::ElastiCache::SubnetGroup",
+			"Condition" : "ElasticacheCreation",
 			"Properties" : {
 				"Description" : "Subnet Group for Memcached", 
 				"SubnetIds" : [ { "Ref" : "PrivateSubnet" }, { "Ref" : "BackupSubnet" } ]
@@ -350,6 +432,7 @@
 		},  
 		"MemcachedSecurityGroup" : {
 			"Type" : "AWS::EC2::SecurityGroup",
+			"Condition" : "ElasticacheCreation",
 			"Properties" : {
 				"GroupDescription" : "Enable access to DataBase for VPC instances",
 				"VpcId" : { "Ref" : "VPC" },
@@ -368,24 +451,19 @@
 				"VpcId" : { "Ref" : "VPC" },
 				"SecurityGroupIngress" : [ {
 					"IpProtocol" : "tcp",
-					"FromPort" : "22", 
-					"ToPort" : "22",
+					"FromPort" : "6666", 
+					"ToPort" : "6666",
 					"CidrIp" : "0.0.0.0/0"
 				}, {
 					"IpProtocol" : "tcp",
 					"FromPort" : "80",
 					"ToPort" : "80",
-					"CidrIp" : "0.0.0.0/0"
+					"CidrIp" : "172.16.1.0/24"
 				}, {
 					"IpProtocol" : "tcp",
 					"FromPort" : "7979",
 					"ToPort" : "7979",
-					"CidrIp" : "0.0.0.0/0"
-				}, { 
-					"IpProtocol" : "udp",
-					"FromPort" : "2055",
-					"ToPort" : "2055",
-					"CidrIp" : "172.16.2.0/24"
+					"CidrIp" : "172.16.1.0/24"
 				} ]
 			}
 		},
@@ -460,7 +538,7 @@
 			"Condition" : "corezkRoleCreation",
 			"DependsOn" : "corezkGroup",
 			"Properties" : {
-				"HostedZoneName" : { "Fn::Join" : [ "", [ { "Ref" : "CDOMAIN" }, "." ] ] },
+				"HostedZoneId" : { "Ref" : "PublicHostedZone" },
 				"Name" : { "Fn::Join" : [ "", [ "data.", { "Ref" : "CDOMAIN" } ] ] }, 
 				"AliasTarget" : {
 					"HostedZoneId" : { "Fn::GetAtt" : [ "WebElasticLoadBalancer", "CanonicalHostedZoneNameID" ] }, 
@@ -612,14 +690,20 @@
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
-					"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
-						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n",
-					"SQLUSER=rdsredborder\n",
-					"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
-					"SQLDB=redborderRDS\n", 
-					"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
-						{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n",
+					{ "Fn::If" : [ "ElasticacheCreation", { "Fn::Join" : [ "", [ 
+						"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
+						"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
+						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n"
+						] ] },
+					"" ] },
+					{ "Fn::If" : [ "RDSCreation", { "Fn::Join" : [ "", [ 
+						"SQLUSER=rdsredborder\n",
+						"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
+						"SQLDB=redborderRDS\n", 
+						"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
+							{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n"
+						] ] }, 
+					"" ] },
 					"ENRICHMODE=samza\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
@@ -718,15 +802,6 @@
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
-					"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
-						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n",
-					"SQLUSER=rdsredborder\n",
-					"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
-					"SQLDB=redborderRDS\n", 
-					"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
-						{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n",
-					"ENRICHMODE=samza\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -809,15 +884,6 @@
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
-					"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
-						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n",
-					"SQLUSER=rdsredborder\n",
-					"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
-					"SQLDB=redborderRDS\n", 
-					"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
-						{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n",
-					"ENRICHMODE=samza\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -841,7 +907,7 @@
 				"AutoScalingGroupName" : { "Ref" : "webdruidGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
 				"NotificationTargetARN" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] }, 
-				"RoleARN" : "arn:aws:iam::612975814341:role/testHook"
+				"RoleARN" : { "Fn::GetAtt" : [ "IAMRoleLifecycleHook", "Arn" ] }
 			}
 		},
 		
@@ -927,15 +993,22 @@
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
-					"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
-						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n",
-					"SQLUSER=rdsredborder\n",
-					"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
-					"SQLDB=redborderRDS\n", 
-					"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
-						{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n",
+					{ "Fn::If" : [ "ElasticacheCreation", { "Fn::Join" : [ "", [ 
+						"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
+						"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
+						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n"
+						] ] },
+					"" ] },
+					{ "Fn::If" : [ "RDSCreation", { "Fn::Join" : [ "", [ 
+						"SQLUSER=rdsredborder\n",
+						"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
+						"SQLDB=redborderRDS\n", 
+						"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
+							{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n"
+						] ] }, 
+					"" ] },
 					"ENRICHMODE=samza\n",
+					"MMDOWNALARMNAME=\"", { "Ref" : "middlemanagerLowCapacityAlarm" }, "\"\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -1033,15 +1106,6 @@
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
-					"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
-						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n",
-					"SQLUSER=rdsredborder\n",
-					"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
-					"SQLDB=redborderRDS\n", 
-					"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
-						{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n",
-					"ENRICHMODE=samza\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -1125,15 +1189,6 @@
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
-					"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
-						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n",
-					"SQLUSER=rdsredborder\n",
-					"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
-					"SQLDB=redborderRDS\n", 
-					"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
-						{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n",
-					"ENRICHMODE=samza\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -1157,7 +1212,7 @@
 				"AutoScalingGroupName" : { "Ref" : "http2kGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
 				"NotificationTargetARN" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] }, 
-				"RoleARN" : "arn:aws:iam::612975814341:role/testHook"
+				"RoleARN" : { "Fn::GetAtt" : [ "IAMRoleLifecycleHook", "Arn" ] }
 			}
 		},
 
@@ -1229,15 +1284,6 @@
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
-					"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
-						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n",
-					"SQLUSER=rdsredborder\n",
-					"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
-					"SQLDB=redborderRDS\n", 
-					"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
-						{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n",
-					"ENRICHMODE=samza\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -1261,7 +1307,7 @@
 				"AutoScalingGroupName" : { "Ref" : "webGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
 				"NotificationTargetARN" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] }, 
-				"RoleARN" : "arn:aws:iam::612975814341:role/testHook"
+				"RoleARN" : { "Fn::GetAtt" : [ "IAMRoleLifecycleHook", "Arn" ] }
 			}
 		}, 
 		"brokerGroup" : {
@@ -1345,15 +1391,6 @@
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
-					"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
-						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n",
-					"SQLUSER=rdsredborder\n",
-					"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
-					"SQLDB=redborderRDS\n", 
-					"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
-						{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n",
-					"ENRICHMODE=samza\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -1372,8 +1409,8 @@
 		},
 		"middlemanagerGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
-			"Condition" : "middlemanagerRoleCreation",
 			"DependsOn" : "kafkaGroup",
+			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "middlemanagerLaunch" },
@@ -1451,15 +1488,6 @@
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
-					"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
-						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n",
-					"SQLUSER=rdsredborder\n",
-					"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
-					"SQLDB=redborderRDS\n", 
-					"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
-						{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n",
-					"ENRICHMODE=samza\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -1476,15 +1504,75 @@
 				] ] } }
 			}
 		},
-		"middlemanagerLifecycleHook" : {
-			"Type" : "AWS::AutoScaling::LifecycleHook",
+		"middlemanagerHighCapacityAlarm" : {
+			"Type" : "AWS::CloudWatch::Alarm",
 			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
-				"AutoScalingGroupName" : { "Ref" : "middlemanagerGroup"  },
-				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
-				"NotificationTargetARN" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] }, 
-				"RoleARN" : "arn:aws:iam::612975814341:role/testHook",
-				"HeartbeatTimeout" : "7200"
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - middlemanagerHighCapacityAlarm" ] ] },
+				"AlarmDescription" : "Alarm for middleManager autoscaling. When capacity is so high, triggers a scaling out",
+				"Namespace" : { "Fn::Join" : [ "", [ "rB/", { "Ref" : "AWS::StackName" } ] ] },
+				"MetricName" : "desired_capacity",
+				"Dimensions" : [ {
+					"Name" : "InstanceId",
+					"Value" : "overlord"
+				} ], 
+				"EvaluationPeriods" : "1",
+				"Period" : "60",
+				"ComparisonOperator" : "GreaterThanOrEqualToThreshold",
+				"Threshold" : "60",
+				"Statistic" : "Average",
+				"ActionsEnabled" : "true",
+				"AlarmActions" : [ { "Ref" : "middleManagerScaleUpPolicy" } ]
+			}
+		},
+		"middlemanagerPendingTasksAlarm" : {
+			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "middlemanagerRoleCreation",
+			"Properties" : {
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - middlemanagerPendingTasksAlarm" ] ] },
+				"AlarmDescription" : "Alarm for middleManager autoscaling. When capacity is so high, triggers a scaling out",
+				"Namespace" : { "Fn::Join" : [ "", [ "rB/", { "Ref" : "AWS::StackName" } ] ] },
+				"MetricName" : "pending_tasks",
+				"Dimensions" : [ {
+					"Name" : "InstanceId",
+					"Value" : "overlord"
+				} ], 
+				"EvaluationPeriods" : "1",
+				"Period" : "60",
+				"ComparisonOperator" : "GreaterThanOrEqualToThreshold",
+				"Threshold" : "1",
+				"Statistic" : "Average",
+				"ActionsEnabled" : "true",
+				"AlarmActions" : [ { "Ref" : "middleManagerScaleUpPolicy" } ]
+			}
+		},
+		"middleManagerScaleUpPolicy" : {
+			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "middlemanagerRoleCreation",
+			"Properties" : {
+				"AdjustmentType" : "ChangeInCapacity",
+				"AutoScalingGroupName" : { "Ref" : "middlemanagerGroup" },
+				"Cooldown" : "900",
+				"ScalingAdjustment" : "2"
+			}
+		}, 
+		"middlemanagerLowCapacityAlarm" : {
+			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "middlemanagerRoleCreation",
+			"Properties" : {
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - middlemanagerLowCapacityAlarm" ] ] },
+				"AlarmDescription" : "Alarm for middleManager autoscaling. When capacity is so low, triggers a scaling in",
+				"Namespace" : { "Fn::Join" : [ "", [ "rB/", { "Ref" : "AWS::StackName" } ] ] },
+				"MetricName" : "desired_capacity",
+				"Dimensions" : [ {
+					"Name" : "InstanceId",
+					"Value" : "overlord"
+				} ], 
+				"EvaluationPeriods" : "10",
+				"Period" : "60",
+				"ComparisonOperator" : "LessThanOrEqualToThreshold",
+				"Threshold" : "40",
+				"Statistic" : "Average"
 			}
 		},
 
@@ -1569,15 +1657,6 @@
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
-					"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
-						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n",
-					"SQLUSER=rdsredborder\n",
-					"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
-					"SQLDB=redborderRDS\n", 
-					"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
-						{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n",
-					"ENRICHMODE=samza\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -1674,15 +1753,6 @@
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
-					"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
-						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n",
-					"SQLUSER=rdsredborder\n",
-					"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
-					"SQLDB=redborderRDS\n", 
-					"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
-						{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n",
-					"ENRICHMODE=samza\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -1784,15 +1854,6 @@
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
-					"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
-						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n",
-					"SQLUSER=rdsredborder\n",
-					"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
-					"SQLDB=redborderRDS\n", 
-					"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
-						{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n",
-					"ENRICHMODE=samza\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
