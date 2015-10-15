@@ -4,6 +4,10 @@
 	"Description" : "AWS CloudFormation template to deploy redBorder Horama Manager",
 
 	"Parameters" : {
+		"AMI" : {
+			"Description" : "redBorder AMI ID to deploy", 
+			"Type" : "String"
+		}, 
 		"NumberOfNodes" : {
 			"Description" : "number of nodes for redBorder cluster. Roles will be configured automatically",
 			"Type" : "Number",
@@ -21,7 +25,6 @@
 		"KeyName" : {
 			"Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instances",
 			"Type" : "AWS::EC2::KeyPair::KeyName",
-			"Default" : "arodriguez", 
 			"ConstraintDescription" : "must be the name of an existing AWS EC2 KeyPair"
 		},
 		"CDOMAIN" : {
@@ -31,8 +34,7 @@
 		},
 		"SSLCertificateName" : {
 			"Description" : "SSL Certificate for load balancer",
-			"Type" : "String",
-			"Default" : "LB"
+			"Type" : "String"
 		},
 		"UseRDS" : {
 			"Description" : "Indicates if you want to use AWS Relational Database Service for PostgreSQL or you prefer to use PostgreSQL provided by redBorder",
@@ -49,9 +51,9 @@
 		"DBPassword": {
 			"NoEcho": "true",
 			"Description" : "The database admin account password",
-			"Default" : "pruebaAWS", 
+			"Default" : "AWSrdsForredBorder", 
 			"Type": "String",
-			"MinLength": "8",
+			"MinLength": "0",
 			"MaxLength": "41",
 			"AllowedPattern" : "[a-zA-Z0-9]*",
 			"ConstraintDescription" : "must contain only alphanumeric characters and must have a minium of 8 characters and a maximum of 41"
@@ -78,32 +80,19 @@
 		},
 
 		"InstanceTypeMap" : {
-			"master" :        { "small":"m3.large",       "medium":"m3.2xlarge",      "large":"m3.2xlarge"       },
-			"custom" :        { "small":"m3.large",       "medium":"m3.2xlarge",      "large":"m3.2xlarge"       },
-			"corezk" :        { "small":"m3.large",       "medium":"i2.xlarge",       "large":"i2.xlarge"        },
-			"kafka" :         { "small":"m3.large",       "medium":"i2.xlarge",       "large":"i2.xlarge"        },
-			"http2k" :        { "small":"m3.large",       "medium":"c4.2xlarge",      "large":"c4.2xlarge"       },
-			"web" :           { "small":"c4.2xlarge",     "medium":"c4.2xlarge",      "large":"c4.2xlarge"       },
-			"broker" :        { "small":"c4.2xlarge",     "medium":"c4.2xlarge",      "large":"c4.2xlarge"       },
-			"middlemanager" : { "small":"m3.large",       "medium":"r3.4xlarge",      "large":"r3.4xlarge"       },
-			"historical" :    { "small":"m3.large",       "medium":"c4.4xlarge",      "large":"c4.4xlarge"       },
-			"historicalhot" : { "small":"m3.large",       "medium":"c4.4xlarge",      "large":"c4.4xlarge"       },
-			"samza" :         { "small":"m4.4xlarge",     "medium":"c4.4xlarge",      "large":"c4.4xlarge"       },
-			"rds" :           { "small":"db.m3.2xlarge",  "medium":"db.m3.2xlarge",   "large":"db.r3.large"      },
+			"master" :        { "small":"m4.xlarge",      "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
+			"custom" :        { "small":"m4.large",       "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
+			"corezk" :        { "small":"m4.large",       "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
+			"kafka" :         { "small":"m4.large",       "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
+			"http2k" :        { "small":"m4.large",       "medium":"c4.2xlarge",      "large":"c4.4xlarge"       },
+			"web" :           { "small":"m4.large",       "medium":"c4.2xlarge",      "large":"c4.4xlarge"       },
+			"broker" :        { "small":"m4.large",       "medium":"c4.2xlarge",      "large":"c4.4xlarge"       },
+			"middlemanager" : { "small":"m4.large",       "medium":"r3.4xlarge",      "large":"r3.8xlarge"       },
+			"historical" :    { "small":"m4.large",       "medium":"c4.4xlarge",      "large":"c4.8xlarge"       },
+			"historicalhot" : { "small":"m4.large",       "medium":"c4.4xlarge",      "large":"c4.8xlarge"       },
+			"samza" :         { "small":"m4.xlarge",      "medium":"c4.4xlarge",      "large":"c4.8xlarge"       },
+			"rds" :           { "small":"db.m3.large",    "medium":"db.m3.2xlarge",   "large":"db.r3.large"      },
 			"memcached" :     { "small":"cache.t2.small", "medium":"cache.m3.xlarge", "large":"cache.m3.2xlarge" }
-		},
-
-		"AWSRegion2AMI" : {
-			"eu-west-1"      : { "HVM64" : "ami-03fcd274" },
-			"eu-central-1"   : { "HVM64" : "ami-7e2c6309" },
-			"us-east-1"      : { "HVM64" : "ami-7e2c6309" },
-			"us-west-2"      : { "HVM64" : "ami-7e2c6309" },
-			"us-west-1"      : { "HVM64" : "ami-7e2c6309" },
-			"ap-northeast-1" : { "HVM64" : "ami-7e2c6309" },
-			"ap-southeast-1" : { "HVM64" : "ami-7e2c6309" },
-			"ap-southeast-2" : { "HVM64" : "ami-7e2c6309" },
-			"sa-east-1"      : { "HVM64" : "ami-7e2c6309" },
-			"cn-north-1"     : { "HVM64" : "ami-7e2c6309" }
 		}
 	},
 
@@ -165,7 +154,7 @@
 			"Properties" : {
 				"VpcId" : { "Ref" : "VPC" },
 				"CidrBlock" : "172.16.1.0/24",
-				"AvailabilityZone" : { "Fn::Select" : [ 1, { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
+				"AvailabilityZone" : { "Fn::Select" : [ 0, { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
 				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "PublicSubnet" ] ] } } ]
 			}
 		},
@@ -183,7 +172,7 @@
 			"Properties" : {
 				"VpcId" : { "Ref" : "VPC" },
 				"CidrBlock" : "172.16.3.0/24",
-				"AvailabilityZone" : { "Fn::Select" : [ 2, { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
+				"AvailabilityZone" : { "Fn::Select" : [ 1, { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
 				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "BackupSunbet" ] ] } } ]
 			}
 		}, 
@@ -517,6 +506,12 @@
 					"FromPort" : "7979",
 					"ToPort" : "7979",
 					"CidrIp" : "172.16.1.0/24"
+				},
+				{
+					"IpProtocol" : "tcp",
+					"FromPort" : "7980",
+					"ToPort" : "7980",
+					"CidrIp" : "172.16.1.0/24"
 				} ]
 			}
 		},
@@ -588,14 +583,18 @@
 		},
 		"DataLoadBalancerDNSName" : {
 			"Type" : "AWS::Route53::RecordSet",
-			"Condition" : "corezkRoleCreation",
-			"DependsOn" : "corezkGroup",
 			"Properties" : {
 				"HostedZoneId" : { "Ref" : "PublicHostedZone" },
 				"Name" : { "Fn::Join" : [ "", [ "data.", { "Ref" : "CDOMAIN" } ] ] }, 
 				"AliasTarget" : {
-					"HostedZoneId" : { "Fn::GetAtt" : [ "WebElasticLoadBalancer", "CanonicalHostedZoneNameID" ] }, 
-					"DNSName" : { "Fn::GetAtt" : [ "WebElasticLoadBalancer", "DNSName" ] }
+					"HostedZoneId" : { "Fn::If" : [ "corezkRoleCreation",
+						{ "Fn::GetAtt" : [ "DataElasticLoadBalancer", "CanonicalHostedZoneNameID" ] },
+						{ "Fn::GetAtt" : [ "WebElasticLoadBalancer", "CanonicalHostedZoneNameID" ] }
+					] }, 
+					"DNSName" : { "Fn::If" : [ "corezkRoleCreation",
+						{ "Fn::GetAtt" : [ "DataElasticLoadBalancer", "DNSName" ] },
+						{ "Fn::GetAtt" : [ "WebElasticLoadBalancer", "DNSName" ] }
+					] } 
 				},
 				"Type" : "A"
 			}
@@ -634,6 +633,7 @@
 		},
 		"DataElasticLoadBalancer" : {
 			"Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+			"Condition" : "corezkRoleCreation",
 			"Properties" : {
 				"CrossZone" : "true",
 				"SecurityGroups" : [ { "Ref" : "WebLoadBalancerSecurityGroup" } ], 
@@ -644,9 +644,9 @@
 				},
 				"Listeners" : [ {
 					"LoadBalancerPort" : "443",
-					"InstancePort" : "7979",
-					"Protocol" : "HTTPS",
-					"InstanceProtocol" : "HTTP",
+					"InstancePort" : "7980",
+					"Protocol" : "SSL",
+					"InstanceProtocol" : "TCP",
 					"SSLCertificateId" : { "Fn::Join" : [ "", [ "arn:aws:iam::", { "Ref" : "AWS::AccountId" }, 
 						":server-certificate/", { "Ref" : "SSLCertificateName" } ] ] }
 				} ],
@@ -705,7 +705,7 @@
 			"Condition" : "masterRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] }, 
+				"ImageId" : { "Ref" : "AMI" }, 
 				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "master", { "Ref" : "InstanceSize" } ] },
@@ -824,7 +824,7 @@
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] }, 
 				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
-				"KeyName"        : { "Ref" : "KeyName" },
+				"ImageId" : { "Ref" : "AMI" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "custom", { "Ref" : "InstanceSize" } ] },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
 				"InstanceMonitoring" : "true", 
@@ -904,7 +904,7 @@
 			"Condition" : "masterRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] }, 
+				"ImageId" : { "Ref" : "AMI" }, 
 				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "custom", { "Ref" : "InstanceSize" } ] },
@@ -1012,7 +1012,7 @@
 			"Condition" : "corezkRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] }, 
+				"ImageId" : { "Ref" : "AMI" },
 				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "corezk", { "Ref" : "InstanceSize" } ] },
@@ -1129,7 +1129,7 @@
 			"Condition" : "kafkaRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] },
+				"ImageId" : { "Ref" : "AMI" },
 				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "kafka", { "Ref" : "InstanceSize" } ] },
@@ -1227,12 +1227,26 @@
 			"Condition" : "http2kRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] }, 
+				"ImageId" : { "Ref" : "AMI" },
 				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "http2k", { "Ref" : "InstanceSize" } ] },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
 				"InstanceMonitoring" : "true",
+				"BlockDeviceMappings" : [ {
+					"DeviceName" : "/dev/sda1",
+					"Ebs" : {
+						"VolumeSize" : "50",
+						"VolumeType" : "gp2",
+						"DeleteOnTermination" : "true"
+					}
+				},  {
+					"DeviceName" : "/dev/sdb",
+						"VirtualName" : "ephemeral0"
+				},  {
+					"DeviceName" : "/dev/sdc",
+						"VirtualName" : "ephemeral1"
+				} ],
 				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
 					"#!/bin/bash\n",
 					"NODEROLE=http2k\n",
@@ -1382,7 +1396,7 @@
 			"Condition" : "webRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] },
+				"ImageId" : { "Ref" : "AMI" },
 				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "web", { "Ref" : "InstanceSize" } ] },
@@ -1538,7 +1552,7 @@
 			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] },
+				"ImageId" : { "Ref" : "AMI" },
 				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "broker", { "Ref" : "InstanceSize" } ] },
@@ -1635,7 +1649,7 @@
 			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] }, 
+				"ImageId" : { "Ref" : "AMI" },
 				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "middlemanager", { "Ref" : "InstanceSize" } ] },
@@ -1805,7 +1819,7 @@
 			"Condition" : "historicalRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] }, 
+				"ImageId" : { "Ref" : "AMI" },
 				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "historical", { "Ref" : "InstanceSize" } ] },
@@ -1901,7 +1915,7 @@
 			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] },
+				"ImageId" : { "Ref" : "AMI" },
 				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "historicalhot", { "Ref" : "InstanceSize" } ] },
@@ -2002,7 +2016,7 @@
 			"Condition" : "samzaRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] }, 
+				"ImageId" : { "Ref" : "AMI" },
 				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "samza", { "Ref" : "InstanceSize" } ] },
