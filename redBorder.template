@@ -32,8 +32,12 @@
 			"Type" : "String", 
 			"Default" : "redbordercloud.com"
 		},
-		"SSLCertificateName" : {
-			"Description" : "SSL Certificate for load balancer",
+		"WebSSLCertificateName" : {
+			"Description" : "SSL Certificate for web load balancer",
+			"Type" : "String"
+		},
+		"DataSSLCertificateName" : {
+			"Description" : "SSL Certificate for data load balancer",
 			"Type" : "String"
 		},
 		"UseRDS" : {
@@ -530,6 +534,11 @@
 					"FromPort" : "80", 
 					"ToPort" : "80",
 					"CidrIp" : "0.0.0.0/0"
+				}, {
+					"IpProtocol" : "icmp",
+					"FromPort" : "-1",
+					"ToPort" : "-1",
+					"CidrIp" : "0.0.0.0/0"
 				} ]
 			}
 		},
@@ -615,7 +624,7 @@
 					"Protocol" : "HTTPS",
 					"InstanceProtocol" : "HTTP",
 					"SSLCertificateId" : { "Fn::Join" : [ "", [ "arn:aws:iam::", { "Ref" : "AWS::AccountId" }, 
-						":server-certificate/", { "Ref" : "SSLCertificateName" } ] ] }
+						":server-certificate/", { "Ref" : "WebSSLCertificateName" } ] ] }
 				}, {
 					"LoadBalancerPort" : "80",
 					"InstancePort" : "80", 
@@ -648,10 +657,10 @@
 					"Protocol" : "SSL",
 					"InstanceProtocol" : "TCP",
 					"SSLCertificateId" : { "Fn::Join" : [ "", [ "arn:aws:iam::", { "Ref" : "AWS::AccountId" }, 
-						":server-certificate/", { "Ref" : "SSLCertificateName" } ] ] }
+						":server-certificate/", { "Ref" : "DataSSLCertificateName" } ] ] }
 				} ],
 				"HealthCheck" : {
-					"Target" : "HTTP:7979/nginx_status",
+					"Target" : "TCP:7980",
 					"HealthyThreshold" : "3",
 					"UnhealthyThreshold" : "5",
 					"Interval" : "30",
@@ -728,6 +737,7 @@
 				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
 					"#!/bin/bash\n",
 					"NODEROLE=master\n",
+					"MODULES=\"flow:true location:true ips:true monitor:true malware:false social:true\"\n",
 					"#NODESERVICES=\n",
 					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
 					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
@@ -1035,6 +1045,7 @@
 				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
 					"#!/bin/bash\n",
 					"NODEROLE=corezk\n",
+					"MODULES=\"flow:true location:true ips:true monitor:true malware:false social:true\"\n",
 					"NODESERVICES=\"rb-cloudwatch:1\"\n",
 					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
 					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
@@ -1304,7 +1315,7 @@
 				"EvaluationPeriods" : "1",
 				"Period" : "300",
 				"ComparisonOperator" : "GreaterThanThreshold",
-				"Threshold" : "65",
+				"Threshold" : "70",
 				"Statistic" : "Average",
 				"ActionsEnabled" : "true",
 				"AlarmActions" : [ { "Ref" : "http2kScaleUpPolicy" } ]
@@ -1335,7 +1346,7 @@
 				"EvaluationPeriods" : "3",
 				"Period" : "300",
 				"ComparisonOperator" : "LessThanThreshold",
-				"Threshold" : "40",
+				"Threshold" : "35",
 				"Statistic" : "Average",
 				"ActionsEnabled" : "true",
 				"AlarmActions" : [ { "Ref" : "http2kScaleDownPolicy" } ]
@@ -1402,6 +1413,20 @@
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "web", { "Ref" : "InstanceSize" } ] },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
 				"InstanceMonitoring" : "true",
+				"BlockDeviceMappings" : [ {
+					"DeviceName" : "/dev/sda1",
+					"Ebs" : {
+						"VolumeSize" : "20",
+						"VolumeType" : "gp2",
+						"DeleteOnTermination" : "true"
+					}
+				},  {
+					"DeviceName" : "/dev/sdb",
+						"VirtualName" : "ephemeral0"
+				},  {
+					"DeviceName" : "/dev/sdc",
+						"VirtualName" : "ephemeral1"
+				} ],
 				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
 					"#!/bin/bash\n",
 					"NODEROLE=web\n",
