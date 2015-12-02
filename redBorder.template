@@ -52,6 +52,12 @@
 			"AllowedValues" : [ "true", "false" ],
 			"Default" : "false"
 		},
+		"CreateMasterName" : {
+			"Description" : "Indicates if you want to assign a master.cdomain name to master instance",
+			"Type" : "String",
+			"AllowedValues" : [ "true", "false" ],
+			"Default" : "false"
+		},
 		"DBPassword": {
 			"NoEcho": "true",
 			"Description" : "The database admin account password",
@@ -139,6 +145,9 @@
 		},
 		"ElasticacheCreation" : {
 			"Fn::Equals" : [ "true", { "Ref" : "UseElasticache" } ]
+		},
+		"masterNameCreation" : {
+			"Fn::Equals" : [ "true", { "Ref" : "CreateMasterName" } ]
 		}
 	},
 	
@@ -286,7 +295,7 @@
 						"Resource" : "*"
 					},{
 						"Effect": "Allow",
-						"Action" : [ "route53:ChangeResourceRecordSets", "route53:ListHostedZones" ],
+						"Action" : [ "route53:ChangeResourceRecordSets", "route53:ListHostedZones", "ListResourceRecordSets" ],
 						"Resource" : [ { "Fn::Join" : [ "", [ "arn:aws:route53:::hostedzone/", { "Ref" : "PublicHostedZone" } ] ] }, 
 									   { "Fn::Join" : [ "", [ "arn:aws:route53:::hostedzone/", { "Ref" : "PrivateHostedZone" } ] ] } ]
 					},{
@@ -577,7 +586,7 @@
 					"VPCRegion" : { "Ref" : "AWS::Region" }
 				} ]
 			}
-		},
+		},		
 		"WebLoadBalancerDNSName" : {
 			"Type" : "AWS::Route53::RecordSet",
 			"Properties" : {
@@ -608,6 +617,31 @@
 				"Type" : "A"
 			}
 		},
+		"ErchefName" : {
+			"Type" : "AWS::Route53::RecordSet",
+			"Properties" : {
+				"HostedZoneId" : { "Ref" : "PrivateHostedZone" },
+				"Name" : { "Fn::Join" : [ "", [ "erchef.", { "Ref" : "CDOMAIN" } ] ] },
+				"AliasTarget" : {
+					"HostedZoneId" : { "Fn::GetAtt" : [ "ChefElasticLoadBalancer", "CanonicalHostedZoneNameID" ] }, 
+					"DNSName" : { "Fn::GetAtt" : [ "ChefElasticLoadBalancer", "DNSName" ] }
+				},
+				"Type" : "A"
+			}
+		},
+		"KafkaName" : {
+			"Type" : "AWS::Route53::RecordSet",
+			"Properties" : {
+				"HostedZoneId" : { "Ref" : "PrivateHostedZone" },
+				"Name" : { "Fn::Join" : [ "", [ "kafka.", { "Ref" : "CDOMAIN" } ] ] },
+				"AliasTarget" : {
+					"HostedZoneId" : { "Fn::GetAtt" : [ "KafkaElasticLoadBalancer", "CanonicalHostedZoneNameID" ] }, 
+					"DNSName" : { "Fn::GetAtt" : [ "KafkaElasticLoadBalancer", "DNSName" ] }
+				},
+				"Type" : "A"
+			}
+		},
+
 		"WebElasticLoadBalancer" : {
 			"Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
 			"Properties" : {
@@ -668,6 +702,68 @@
 				}
 			}
 		},
+		"ChefElasticLoadBalancer" : {
+			"Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+			"Condition" : "corezkRoleCreation",
+			"Properties" : {
+				"CrossZone" : "true",
+				"SecurityGroups" : [ { "Ref" : "WebLoadBalancerSecurityGroup" } ], 
+				"Subnets" : [ { "Ref" : "PrivateSubnet" } ],
+				"Scheme" : "internal",
+				"ConnectionDrainingPolicy" : {
+					"Enabled" : "true",
+					"Timeout" : "30"
+				},
+				"Listeners" : [ {
+					"LoadBalancerPort" : "443",
+					"InstancePort" : "7979",
+					"Protocol" : "HTTPS",
+					"InstanceProtocol" : "HTTP",
+					"SSLCertificateId" : { "Fn::Join" : [ "", [ "arn:aws:iam::", { "Ref" : "AWS::AccountId" }, 
+						":server-certificate/", { "Ref" : "WebSSLCertificateName" } ] ] }
+				}, {
+					"LoadBalancerPort" : "80",
+					"InstancePort" : "80", 
+					"Protocol" : "HTTP", 
+					"InstanceProtocol" : "HTTP"
+				} ],
+				"HealthCheck" : {
+					"Target" : "TCP:7979",
+					"HealthyThreshold" : "3",
+					"UnhealthyThreshold" : "5",
+					"Interval" : "30",
+					"Timeout" : "25"
+				}
+			}
+		},
+		"KafkaElasticLoadBalancer" : {
+			"Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+			"Condition" : "kafkaRoleCreation",
+			"Properties" : {
+				"CrossZone" : "true",
+				"SecurityGroups" : [ { "Ref" : "WebLoadBalancerSecurityGroup" } ], 
+				"Subnets" : [ { "Ref" : "PrivateSubnet" } ],
+				"Scheme" : "internal",
+				"ConnectionDrainingPolicy" : {
+					"Enabled" : "true",
+					"Timeout" : "30"
+				},
+				"Listeners" : [ {
+					"LoadBalancerPort" : "9092",
+					"InstancePort" : "9092",
+					"Protocol" : "TCP",
+					"InstanceProtocol" : "TCP"
+				} ],
+				"HealthCheck" : {
+					"Target" : "TCP:9092",
+					"HealthyThreshold" : "3",
+					"UnhealthyThreshold" : "5",
+					"Interval" : "30",
+					"Timeout" : "25"
+				}
+			}
+		},
+		
 
 		"masterGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
@@ -752,6 +848,7 @@
 					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
 					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
 					"S3TYPE=aws\n",
+					{ "Fn::If" : [ "masterNameCreation", "ROUTE53NAMES=master\n", "" ] },
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
 					"CHEF_AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKeyChef" }, "\"\n",
@@ -985,6 +1082,7 @@
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "corezkLaunch" },
+				"LoadBalancerNames" : [ { "Ref" : "ChefElasticLoadBalancer" } ],
 				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "corezk" ] },
 				"MaxSize" : "10",
 				"Tags" : [ {
@@ -1060,6 +1158,7 @@
 					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
 					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
 					"S3TYPE=aws\n",
+					{ "Fn::If" : [ "masterNameCreation", "ROUTE53NAMES=master\n", "" ] },
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
 					"CHEF_AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKeyChef" }, "\"\n",
@@ -1103,6 +1202,7 @@
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "kafkaLaunch" },
+				"LoadBalancerNames" : [ { "Ref" : "KafkaElasticLoadBalancer" } ],
 				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "kafka" ] },
 				"MaxSize" : "10",
 				"Tags" : [ {
