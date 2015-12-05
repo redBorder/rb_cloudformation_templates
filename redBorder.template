@@ -58,6 +58,12 @@
 			"AllowedValues" : [ "true", "false" ],
 			"Default" : "false"
 		},
+		"CreateInternalLoadBalancers" : {
+			"Description" : "Indicates if you want internal load balancers (only for cisco environments)",
+			"Type" : "String",
+			"AllowedValues" : [ "true", "false" ],
+			"Default" : "false"
+		},
 		"DBPassword": {
 			"NoEcho": "true",
 			"Description" : "The database admin account password",
@@ -148,6 +154,10 @@
 		},
 		"masterNameCreation" : {
 			"Fn::Equals" : [ "true", { "Ref" : "CreateMasterName" } ]
+		},
+		"InternalLoadBalancerCreation" : {
+			"Fn::And" : [ { "Fn::Equals" : [ "true", { "Ref" : "CreateInternalLoadBalancers" } ] }, 
+				{ "Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "corezk" ] } ] } ] } ]
 		}
 	},
 	
@@ -295,7 +305,7 @@
 						"Resource" : "*"
 					},{
 						"Effect": "Allow",
-						"Action" : [ "route53:ChangeResourceRecordSets", "route53:ListHostedZones", "ListResourceRecordSets" ],
+						"Action" : [ "route53:ChangeResourceRecordSets", "route53:ListHostedZones", "route53:ListResourceRecordSets" ],
 						"Resource" : [ { "Fn::Join" : [ "", [ "arn:aws:route53:::hostedzone/", { "Ref" : "PublicHostedZone" } ] ] }, 
 									   { "Fn::Join" : [ "", [ "arn:aws:route53:::hostedzone/", { "Ref" : "PrivateHostedZone" } ] ] } ]
 					},{
@@ -519,11 +529,15 @@
 					"FromPort" : "7979",
 					"ToPort" : "7979",
 					"CidrIp" : "172.16.1.0/24"
-				},
-				{
+				}, {
 					"IpProtocol" : "tcp",
 					"FromPort" : "7980",
 					"ToPort" : "7980",
+					"CidrIp" : "172.16.1.0/24"
+				},  {
+					"IpProtocol" : "tcp",
+					"FromPort" : "9092",
+					"ToPort" : "9092",
 					"CidrIp" : "172.16.1.0/24"
 				} ]
 			}
@@ -548,6 +562,34 @@
 					"FromPort" : "-1",
 					"ToPort" : "-1",
 					"CidrIp" : "0.0.0.0/0"
+				} ]
+			}
+		},
+		"CoreLoadBalancerSecurityGroup" : {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Condition" : "InternalLoadBalancerCreation",
+			"Properties" : {
+				"GroupDescription" : "Enable erchef, postgresql, pgpool, resourcemanager and namenode traffic",
+				"VpcId" : { "Ref" : "VPC" },
+				"SecurityGroupIngress" : [ {
+					"IpProtocol" : "tcp",
+					"FromPort" : "443",
+					"ToPort" : "443",
+					"CidrIp" : "172.16.2.0/24"
+				} ]
+			}
+		},
+		"KafkaLoadBalancerSecurityGroup" : {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Condition" : "InternalLoadBalancerCreation",
+			"Properties" : {
+				"GroupDescription" : "Enable Kafka TCP traffic",
+				"VpcId" : { "Ref" : "VPC" },
+				"SecurityGroupIngress" : [ {
+					"IpProtocol" : "tcp",
+					"FromPort" : "9092",
+					"ToPort" : "9092",
+					"CidrIp" : "172.16.2.0/24"
 				} ]
 			}
 		},
@@ -619,18 +661,20 @@
 		},
 		"ErchefName" : {
 			"Type" : "AWS::Route53::RecordSet",
+			"Condition" : "InternalLoadBalancerCreation",
 			"Properties" : {
 				"HostedZoneId" : { "Ref" : "PrivateHostedZone" },
 				"Name" : { "Fn::Join" : [ "", [ "erchef.", { "Ref" : "CDOMAIN" } ] ] },
 				"AliasTarget" : {
-					"HostedZoneId" : { "Fn::GetAtt" : [ "ChefElasticLoadBalancer", "CanonicalHostedZoneNameID" ] }, 
-					"DNSName" : { "Fn::GetAtt" : [ "ChefElasticLoadBalancer", "DNSName" ] }
+					"HostedZoneId" : { "Fn::GetAtt" : [ "CoreElasticLoadBalancer", "CanonicalHostedZoneNameID" ] }, 
+					"DNSName" : { "Fn::GetAtt" : [ "CoreElasticLoadBalancer", "DNSName" ] }
 				},
 				"Type" : "A"
 			}
 		},
 		"KafkaName" : {
 			"Type" : "AWS::Route53::RecordSet",
+			"Condition" : "InternalLoadBalancerCreation",
 			"Properties" : {
 				"HostedZoneId" : { "Ref" : "PrivateHostedZone" },
 				"Name" : { "Fn::Join" : [ "", [ "kafka.", { "Ref" : "CDOMAIN" } ] ] },
@@ -641,7 +685,6 @@
 				"Type" : "A"
 			}
 		},
-
 		"WebElasticLoadBalancer" : {
 			"Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
 			"Properties" : {
@@ -702,13 +745,13 @@
 				}
 			}
 		},
-		"ChefElasticLoadBalancer" : {
+		"CoreElasticLoadBalancer" : {
 			"Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
-			"Condition" : "corezkRoleCreation",
+			"Condition" : "InternalLoadBalancerCreation",
 			"Properties" : {
 				"CrossZone" : "true",
 				"SecurityGroups" : [ { "Ref" : "WebLoadBalancerSecurityGroup" } ], 
-				"Subnets" : [ { "Ref" : "PrivateSubnet" } ],
+				"Subnets" : [ { "Ref" : "PublicSubnet" } ],
 				"Scheme" : "internal",
 				"ConnectionDrainingPolicy" : {
 					"Enabled" : "true",
@@ -721,14 +764,9 @@
 					"InstanceProtocol" : "HTTP",
 					"SSLCertificateId" : { "Fn::Join" : [ "", [ "arn:aws:iam::", { "Ref" : "AWS::AccountId" }, 
 						":server-certificate/", { "Ref" : "WebSSLCertificateName" } ] ] }
-				}, {
-					"LoadBalancerPort" : "80",
-					"InstancePort" : "80", 
-					"Protocol" : "HTTP", 
-					"InstanceProtocol" : "HTTP"
 				} ],
 				"HealthCheck" : {
-					"Target" : "TCP:7979",
+					"Target" : "HTTP:7979/users/login",
 					"HealthyThreshold" : "3",
 					"UnhealthyThreshold" : "5",
 					"Interval" : "30",
@@ -738,11 +776,11 @@
 		},
 		"KafkaElasticLoadBalancer" : {
 			"Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
-			"Condition" : "kafkaRoleCreation",
+			"Condition" : "InternalLoadBalancerCreation",
 			"Properties" : {
 				"CrossZone" : "true",
-				"SecurityGroups" : [ { "Ref" : "WebLoadBalancerSecurityGroup" } ], 
-				"Subnets" : [ { "Ref" : "PrivateSubnet" } ],
+				"SecurityGroups" : [ { "Ref" : "KafkaLoadBalancerSecurityGroup" } ], 
+				"Subnets" : [ { "Ref" : "PublicSubnet" } ],
 				"Scheme" : "internal",
 				"ConnectionDrainingPolicy" : {
 					"Enabled" : "true",
@@ -848,6 +886,8 @@
 					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
 					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
 					"S3TYPE=aws\n",
+					"CLOUDDNS=1\n",
+					"LBINTERNAL=0\n",
 					{ "Fn::If" : [ "masterNameCreation", "ROUTE53NAMES=master\n", "" ] },
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
@@ -1082,7 +1122,7 @@
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "corezkLaunch" },
-				"LoadBalancerNames" : [ { "Ref" : "ChefElasticLoadBalancer" } ],
+				"LoadBalancerNames" : { "Fn::If" : [ "InternalLoadBalancerCreation", [ { "Ref" : "CoreElasticLoadBalancer" } ], { "Ref" : "AWS::NoValue" } ] },
 				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "corezk" ] },
 				"MaxSize" : "10",
 				"Tags" : [ {
@@ -1158,6 +1198,8 @@
 					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
 					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
 					"S3TYPE=aws\n",
+					"CLOUDDNS=1\n",
+					{ "Fn::If" : [ "InternalLoadBalancerCreation",  "LBINTERNAL=1\n", "LBINTERNAL=0\n" ] },
 					{ "Fn::If" : [ "masterNameCreation", "ROUTE53NAMES=master\n", "" ] },
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
@@ -1202,7 +1244,7 @@
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "kafkaLaunch" },
-				"LoadBalancerNames" : [ { "Ref" : "KafkaElasticLoadBalancer" } ],
+				"LoadBalancerNames" : { "Fn::If" : [ "InternalLoadBalancerCreation", [ { "Ref" : "KafkaElasticLoadBalancer" } ], { "Ref" : "AWS::NoValue" } ] },
 				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "kafka" ] },
 				"MaxSize" : "10",
 				"Tags" : [ {
