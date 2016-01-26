@@ -629,10 +629,22 @@
 				} ]
 			}
 		},		
-		"WebLoadBalancerDNSName" : {
+		"PublicWebLoadBalancerDNSName" : {
 			"Type" : "AWS::Route53::RecordSet",
 			"Properties" : {
 				"HostedZoneId" : { "Ref" : "PublicHostedZone" },
+				"Name" : { "Ref" : "CDOMAIN" },
+				"AliasTarget" : {
+					"HostedZoneId" : { "Fn::GetAtt" : [ "WebElasticLoadBalancer", "CanonicalHostedZoneNameID" ] }, 
+					"DNSName" : { "Fn::GetAtt" : [ "WebElasticLoadBalancer", "DNSName" ] }
+				},
+				"Type" : "A"
+			}
+		},
+		"PrivateWebLoadBalancerDNSName" : {
+			"Type" : "AWS::Route53::RecordSet",
+			"Properties" : {
+				"HostedZoneId" : { "Ref" : "PrivateHostedZone" },
 				"Name" : { "Ref" : "CDOMAIN" },
 				"AliasTarget" : {
 					"HostedZoneId" : { "Fn::GetAtt" : [ "WebElasticLoadBalancer", "CanonicalHostedZoneNameID" ] }, 
