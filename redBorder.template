@@ -8,6 +8,11 @@
 			"Description" : "redBorder AMI ID to deploy", 
 			"Type" : "String"
 		}, 
+		"AMIOpenVPN" : {
+			"Description" : "openvpn for redBorder AMI to deploy",
+			"Type" : "String",
+			"Default" : "ami-bcd86fcf"
+		},
 		"NumberOfNodes" : {
 			"Description" : "number of nodes for redBorder cluster. Roles will be configured automatically",
 			"Type" : "Number",
@@ -63,6 +68,20 @@
 			"Type" : "String",
 			"AllowedValues" : [ "true", "false" ],
 			"Default" : "false"
+		},
+		"CreateOpenVPNInstance" : {
+			"Description" : "Indicates if you want VPN access to public and private subnets",
+			"Type" : "String",
+			"AllowedValues" : [ "true", "false" ],
+			"Default" : "true"
+		},
+		"openVPNAdminPasswd" : {
+			"Description" : "Password for administrator access to OpenVPN server (with user redborder)",
+			"Type" : "String",
+			"NoEcho" : "true",
+			"MinLength" : "0",
+			"MaxLength"	: "41",
+			"ConstraintDescription" : "must contain only alphanumeric characters and must have a minium of 8 characters and a maximum of 41"		
 		},
 		"DBPassword": {
 			"NoEcho": "true",
@@ -154,6 +173,9 @@
 		},
 		"masterNameCreation" : {
 			"Fn::Equals" : [ "true", { "Ref" : "CreateMasterName" } ]
+		},
+		"openVPNInstanceCreation" : {
+			"Fn::Equals" : [ "true", { "Ref" : "CreateOpenVPNInstance" } ]
 		},
 		"InternalLoadBalancerCreation" : {
 			"Fn::And" : [ { "Fn::Equals" : [ "true", { "Ref" : "CreateInternalLoadBalancers" } ] }, 
@@ -542,6 +564,36 @@
 				} ]
 			}
 		},
+
+		"openVPNSecurityGroup" : {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Condition" : "openVPNInstanceCreation",
+			"Properties" : {
+				"GroupDescription" : "Enable ports for OpenVPN service Port 943 is for administrator web access",
+				"VpcId" : { "Ref" : "VPC" },
+				"SecurityGroupIngress" : [ { 
+					"IpProtocol" : "tcp", 
+					"FromPort" : "443",
+					"ToPort" : "443",
+					"CidrIp" : "0.0.0.0/0"
+				}, {
+					"IpProtocol" : "tcp", 
+					"FromPort" : "943",
+					"ToPort" : "943",
+					"CidrIp" : "0.0.0.0/0"
+				}, {
+					"IpProtocol" : "tcp", 
+					"FromPort" : "22",
+					"ToPort" : "22",
+					"CidrIp" : "0.0.0.0/0"
+				}, {
+					"IpProtocol" : "udp", 
+					"FromPort" : "1194",
+					"ToPort" : "1194",
+					"CidrIp" : "0.0.0.0/0"
+				} ]
+			}
+		},
 		"WebLoadBalancerSecurityGroup" : {
 			"Type" : "AWS::EC2::SecurityGroup",
 			"Properties" : {
@@ -695,6 +747,17 @@
 					"DNSName" : { "Fn::GetAtt" : [ "KafkaElasticLoadBalancer", "DNSName" ] }
 				},
 				"Type" : "A"
+			}
+		},
+		"OpenVPNName" : {
+			"Type" : "AWS::Route53::RecordSet",
+			"Condition" : "openVPNInstanceCreation",
+			"Properties" : {
+				"Type" : "A",
+				"HostedZoneId" : { "Ref" : "PublicHostedZone" }, 
+				"Name" : { "Fn::Join" : [ "", [ "openvpn.", { "Ref" : "CDOMAIN" } ] ] }, 
+				"ResourceRecords" : [ { "Fn::GetAtt" : [ "openVPNInstance", "PublicIp" ] } ], 
+				"TTL" : "300"
 			}
 		},
 		"WebElasticLoadBalancer" : {
@@ -2245,6 +2308,57 @@
 					". /opt/rb/bin/rb_set_aws_interface.sh",
 					"\n"
 				] ] } }
+			}
+		},
+		"openVPNInstance" : {
+			"Type" : "AWS::EC2::Instance",
+			"Condition" : "openVPNInstanceCreation",
+			"Properties" : {
+				"AvailabilityZone" : { "Fn::GetAtt" : [ "PublicSubnet", "AvailabilityZone" ] },
+				"ImageId" : { "Ref" : "AMIOpenVPN" },
+				"InstanceType" : "t2.micro",
+				"KeyName" : { "Ref" : "KeyName" },
+				"NetworkInterfaces": [ {
+			      	"AssociatePublicIpAddress": "true",
+			      	"DeviceIndex": "0",
+			      	"GroupSet": [ { "Ref" : "openVPNSecurityGroup" } ],
+			      	"SubnetId": { "Ref" : "PublicSubnet" }
+			    } ],				
+				"SourceDestCheck" : "false",
+				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+					"public_hostname=", { "Fn::Join" : [ "", [ "openvpn.", { "Ref" : "CDOMAIN" } ] ] }, "\n",
+					"admin_user=redborder\n",
+					"admin_pw=", { "Ref" : "openVPNAdminPasswd" }, "\n",
+					"reroute_dns=1\n"
+				] ] } },
+				"Tags" : [ {
+					"Key" : "Role",
+					"Value" : "openvpn"					
+				},{
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" }					
+				},{
+					"Key" : "Name", 
+					"Value" : { "Fn::Join" : [ "", [
+						{ "Ref" : "AWS::StackName" }, " - openvpn" ] ] }
+				} ]
+			}
+		}, 
+		"privateInterfaceOpenVPN" : {
+ 			"Type" : "AWS::EC2::NetworkInterface",
+			"Condition" : "openVPNInstanceCreation", 
+			"Properties" : {
+				"SubnetId" : { "Ref" : "PrivateSubnet" }
+			}
+		}, 
+		"privateInterfaceAttachmentOpenVPN" : {
+			"Type": "AWS::EC2::NetworkInterfaceAttachment",
+			"Condition" : "openVPNInstanceCreation", 
+			"Properties" : {
+				"DeleteOnTermination" : "true", 
+				"DeviceIndex" : "1",
+				"InstanceId" : { "Ref" : "openVPNInstance" },
+				"NetworkInterfaceId" : { "Ref" : "privateInterfaceOpenVPN" }
 			}
 		}
 	}
