@@ -749,7 +749,7 @@
 				"Type" : "A"
 			}
 		},
-		"OpenVPNName" : {
+		"OpenVPNPublicName" : {
 			"Type" : "AWS::Route53::RecordSet",
 			"Condition" : "openVPNInstanceCreation",
 			"Properties" : {
@@ -757,6 +757,17 @@
 				"HostedZoneId" : { "Ref" : "PublicHostedZone" }, 
 				"Name" : { "Fn::Join" : [ "", [ "openvpn.", { "Ref" : "CDOMAIN" } ] ] }, 
 				"ResourceRecords" : [ { "Fn::GetAtt" : [ "openVPNInstance", "PublicIp" ] } ], 
+				"TTL" : "300"
+			}
+		},
+		"OpenVPNPrivateName" : {
+			"Type" : "AWS::Route53::RecordSet",
+			"Condition" : "openVPNInstanceCreation",
+			"Properties" : {
+				"Type" : "A",
+				"HostedZoneId" : { "Ref" : "PrivateHostedZone" }, 
+				"Name" : { "Fn::Join" : [ "", [ "openvpn.", { "Ref" : "CDOMAIN" } ] ] }, 
+				"ResourceRecords" : [ { "Fn::GetAtt" : [ "openVPNInstance", "PrivateIp" ] } ], 
 				"TTL" : "300"
 			}
 		},
