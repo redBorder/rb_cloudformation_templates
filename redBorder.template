@@ -32,6 +32,12 @@
 			"Type" : "AWS::EC2::KeyPair::KeyName",
 			"ConstraintDescription" : "must be the name of an existing AWS EC2 KeyPair"
 		},
+		"Email" : {
+			"Description" : "Email address to notify cloudwatch alarms",
+			"Type" : "String",
+			"AllowedPattern": "([a-zA-Z0-9_\\-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([a-zA-Z0-9\\-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)",
+      		"ConstraintDescription": "must be a valid email address."
+		},
 		"CDOMAIN" : {
 			"Description" : "DNS Domain for cluster",
 			"Type" : "String", 
@@ -119,12 +125,12 @@
 			"custom" :        { "small":"m4.large",       "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
 			"corezk" :        { "small":"m4.large",       "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
 			"kafka" :         { "small":"m4.large",       "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
-			"http2k" :        { "small":"m4.large",       "medium":"c4.2xlarge",      "large":"c4.4xlarge"       },
+			"http2k" :        { "small":"m4.large",       "medium":"c4.xlarge",      "large":"c4.2xlarge"        },
 			"web" :           { "small":"m4.large",       "medium":"c4.2xlarge",      "large":"c4.4xlarge"       },
 			"broker" :        { "small":"m4.large",       "medium":"c4.2xlarge",      "large":"c4.4xlarge"       },
 			"middlemanager" : { "small":"m4.large",       "medium":"r3.4xlarge",      "large":"r3.8xlarge"       },
 			"historical" :    { "small":"m4.large",       "medium":"c4.4xlarge",      "large":"c4.8xlarge"       },
-			"historicalhot" : { "small":"m4.large",       "medium":"c4.4xlarge",      "large":"c4.8xlarge"       },
+			"historicalhot" : { "small":"m4.large",       "medium":"m4.4xlarge",      "large":"m4.10xlarge"      },
 			"samza" :         { "small":"m4.xlarge",      "medium":"c4.4xlarge",      "large":"c4.8xlarge"       },
 			"rds" :           { "small":"db.m3.large",    "medium":"db.m3.2xlarge",   "large":"db.r3.large"      },
 			"memcached" :     { "small":"cache.t2.small", "medium":"cache.m3.xlarge", "large":"cache.m3.2xlarge" }
@@ -304,7 +310,8 @@
 							"ec2:ModifyNetworkInterfaceAttribute",
 							"ec2:DescribeInstances",
 							"ec2:AssignPrivateIpAddresses",
-							"ec2:UnassignPrivateIpAddresses" ],
+							"ec2:UnassignPrivateIpAddresses",
+							"ec2:DescribeTags" ],
 						"Effect" : "Allow",
 						"Resource" : "*"
 					}, {
@@ -456,19 +463,28 @@
 						"Action":"sqs:SendMessage",
 						"Resource": { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] },
 						"Condition":{
-							"ArnEquals": { "aws:SourceArn" : { "Ref" : "SNSTopic" } }
+							"ArnEquals": { "aws:SourceArn" : { "Ref" : "SNSManagementTopic" } }
 						}
 					} ]
 				}
 			}
 		}, 
-		"SNSTopic" : {
+		"SNSManagementTopic" : {
 			"Type" : "AWS::SNS::Topic", 
 			"Properties" : {
 				"Subscription" : [ {
 					"Protocol" : "sqs",
 					"Endpoint" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] }
 				} ]
+			}
+		},
+		"SNSNotificationTopic" : {
+			"Type" : "AWS::SNS::Topic",
+			"Properties" : {
+				"Subscription" : [ {
+					"Protocol" : "email",
+					"Endpoint" : { "Ref" : "Email" }
+				}]
 			}
 		},
 		"DBRDS" : {
@@ -528,19 +544,23 @@
 					"FromPort" : "11211",
 					"ToPort" : "11211",
 					"CidrIp" : "172.16.0.0/16"
+				} ],
+				"Tags" : [ {
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" }
 				} ]
 			}
 		},
-		"redBorderSecurityGroup" : {
+		"redBorderPublicSecurityGroup" : {
 			"Type" : "AWS::EC2::SecurityGroup",
 			"Properties" : {
-				"GroupDescription" : "Enable SSH, HTTP and HTTPS",
+				"GroupDescription" : "Security group for redBorder bond0 interfaces (public interfaces)",
 				"VpcId" : { "Ref" : "VPC" },
 				"SecurityGroupIngress" : [ {
 					"IpProtocol" : "tcp",
-					"FromPort" : "6666", 
-					"ToPort" : "6666",
-					"CidrIp" : "0.0.0.0/0"
+					"FromPort" : { "Fn::If" : [ "openVPNInstanceCreation", "22", "6666" ] },
+					"ToPort" : { "Fn::If" : [ "openVPNInstanceCreation", "22", "6666" ] },
+					"CidrIp" : { "Fn::If" : [ "openVPNInstanceCreation", "172.16.1.0/24", "0.0.0.0/0" ] } 
 				}, {
 					"IpProtocol" : "tcp",
 					"FromPort" : "80",
@@ -561,7 +581,41 @@
 					"FromPort" : "9092",
 					"ToPort" : "9092",
 					"CidrIp" : "172.16.1.0/24"
+				} ],
+				"Tags" : [ {
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" }
+				}, {
+					"Key" : "Name", 
+					"Value" : { "Fn::Join" : [ "", [
+						{ "Ref" : "AWS::StackName" }, " - rBPublicSG" ] ] }
 				} ]
+			}
+		},
+		
+		"redBorderPrivateSecurityGroup" : {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Properties" : {
+				"GroupDescription" : "Security group for redBorder bond1 interfaces (private interfaces)",
+				"VpcId" : { "Ref" : "VPC" },
+				"Tags" : [ {
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" }
+				}, {
+					"Key" : "Name", 
+					"Value" : { "Fn::Join" : [ "", [
+						{ "Ref" : "AWS::StackName" }, " - rBPrivateSG" ] ] }
+				} ]
+			}
+		},
+		"redBorderPrivateSecurityGroupIngress" : {
+			"Type" : "AWS::EC2::SecurityGroupIngress",
+			"Properties" : {
+				"GroupId" : { "Ref" : "redBorderPrivateSecurityGroup" },
+				"IpProtocol" : "-1",
+				"FromPort" : "-1", 
+				"ToPort" : "-1",
+				"SourceSecurityGroupId" : { "Ref" : "redBorderPrivateSecurityGroup" }
 			}
 		},
 
@@ -582,18 +636,18 @@
 					"ToPort" : "943",
 					"CidrIp" : "0.0.0.0/0"
 				}, {
-					"IpProtocol" : "tcp", 
-					"FromPort" : "22",
-					"ToPort" : "22",
-					"CidrIp" : "0.0.0.0/0"
-				}, {
 					"IpProtocol" : "udp", 
 					"FromPort" : "1194",
 					"ToPort" : "1194",
 					"CidrIp" : "0.0.0.0/0"
+				} ],
+				"Tags" : [ {
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" }
 				} ]
 			}
 		},
+		
 		"WebLoadBalancerSecurityGroup" : {
 			"Type" : "AWS::EC2::SecurityGroup",
 			"Properties" : {
@@ -614,6 +668,10 @@
 					"FromPort" : "-1",
 					"ToPort" : "-1",
 					"CidrIp" : "0.0.0.0/0"
+				} ],
+				"Tags" : [ {
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" }
 				} ]
 			}
 		},
@@ -628,6 +686,10 @@
 					"FromPort" : "443",
 					"ToPort" : "443",
 					"CidrIp" : "172.16.2.0/24"
+				} ],
+				"Tags" : [ {
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" }
 				} ]
 			}
 		},
@@ -642,6 +704,10 @@
 					"FromPort" : "9092",
 					"ToPort" : "9092",
 					"CidrIp" : "172.16.2.0/24"
+				} ],
+				"Tags" : [ {
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" }
 				} ]
 			}
 		},
@@ -655,6 +721,10 @@
 					"FromPort" : "5432",
 					"ToPort" : "5432",
 					"CidrIp" : "172.16.0.0/16"
+				} ],
+				"Tags" : [ {
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" }
 				} ]
 			}
 		},
@@ -935,7 +1005,7 @@
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" }, 
-				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
+				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "master", { "Ref" : "InstanceSize" } ] },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
@@ -964,6 +1034,7 @@
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
 					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=masterGroup\n",
 					"LOGWATCHG=", { "Ref" : "AWS::StackName" }, "\n",
@@ -1056,7 +1127,7 @@
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] }, 
-				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
+				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"ImageId" : { "Ref" : "AMI" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "custom", { "Ref" : "InstanceSize" } ] },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
@@ -1084,6 +1155,7 @@
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
 					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=customGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -1138,7 +1210,7 @@
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" }, 
-				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
+				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "custom", { "Ref" : "InstanceSize" } ] },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
@@ -1166,6 +1238,7 @@
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
 					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=webdruidGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -1211,6 +1284,12 @@
 				"LoadBalancerNames" : { "Fn::If" : [ "InternalLoadBalancerCreation", [ { "Ref" : "CoreElasticLoadBalancer" } ], { "Ref" : "AWS::NoValue" } ] },
 				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "corezk" ] },
 				"MaxSize" : "10",
+				"NotificationConfiguration" : {
+					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
+          			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_TERMINATE",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE_ERROR" ]
+        			
+      			},
 				"Tags" : [ {
 					"Key" : "Role",
 					"Value" : "corezk",
@@ -1247,7 +1326,7 @@
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
-				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
+				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "corezk", { "Ref" : "InstanceSize" } ] },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
@@ -1276,6 +1355,7 @@
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
 					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=corezkGroup\n",
 					"LOGWATCHG=", { "Ref" : "AWS::StackName" }, "\n",
@@ -1307,6 +1387,7 @@
 					"" ] },
 					"ENRICHMODE=samza\n",
 					"MMDOWNALARMNAME=\"", { "Ref" : "middlemanagerLowCapacityAlarm" }, "\"\n",
+					"CMDFINISH='rb_druid_rules.rb -t _default -p pt12h -r 1 -d forever -i 1'",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -1333,6 +1414,11 @@
 				"LoadBalancerNames" : { "Fn::If" : [ "InternalLoadBalancerCreation", [ { "Ref" : "KafkaElasticLoadBalancer" } ], { "Ref" : "AWS::NoValue" } ] },
 				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "kafka" ] },
 				"MaxSize" : "10",
+				"NotificationConfiguration" : {
+					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
+          			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_TERMINATE",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE_ERROR" ]
+      			},
 				"Tags" : [ {
 					"Key" : "Role",
 					"Value" : "kafka",
@@ -1369,7 +1455,7 @@
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
-				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
+				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "kafka", { "Ref" : "InstanceSize" } ] },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
@@ -1397,6 +1483,7 @@
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
 					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=kafkaGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -1431,6 +1518,14 @@
 				"LaunchConfigurationName" : { "Ref" : "http2kLaunch" },
 				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "http2k" ] },
 				"MaxSize" : "10",
+				"NotificationConfiguration" : {
+					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
+          			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
+                        					"autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE_ERROR" ]
+        			
+      			},
 				"Tags" : [ {
 					"Key" : "Role",
 					"Value" : "http2k",
@@ -1467,7 +1562,7 @@
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
-				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
+				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "http2k", { "Ref" : "InstanceSize" } ] },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
@@ -1494,6 +1589,7 @@
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
 					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=http2kGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -1600,6 +1696,13 @@
 				"LoadBalancerNames" : [ { "Ref" : "WebElasticLoadBalancer" } ],
 				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "web" ] },
 				"MaxSize" : "10",
+				"NotificationConfiguration" : {
+					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
+          			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
+                        					"autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE_ERROR" ]        			
+      			},
 				"Tags" : [ {
 					"Key" : "Role",
 					"Value" : "web",
@@ -1636,7 +1739,7 @@
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
-				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
+				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "web", { "Ref" : "InstanceSize" } ] },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
@@ -1664,6 +1767,7 @@
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
 					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=webGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -1770,6 +1874,13 @@
 				"LaunchConfigurationName" : { "Ref" : "brokerLaunch" },
 				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "broker" ] },
 				"MaxSize" : "10",
+				"NotificationConfiguration" : {
+					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
+          			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
+                        					"autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE_ERROR" ]
+      			},
 				"Tags" : [ {
 					"Key" : "Role",
 					"Value" : "broker",
@@ -1806,7 +1917,7 @@
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
-				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
+				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "broker", { "Ref" : "InstanceSize" } ] },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
@@ -1834,6 +1945,7 @@
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
 					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=brokerGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -1858,6 +1970,79 @@
 				] ] } }
 			}
 		},
+		"brokerLifecycleHook" : {
+			"Type" : "AWS::AutoScaling::LifecycleHook",
+			"Condition" : "brokerRoleCreation",
+			"Properties" : {
+				"AutoScalingGroupName" : { "Ref" : "brokerGroup"  },
+				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
+				"NotificationTargetARN" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] }, 
+				"RoleARN" : { "Fn::GetAtt" : [ "IAMRoleLifecycleHook", "Arn" ] }
+			}
+		},
+		"brokerHighCPUAlarm" : {
+			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "brokerRoleCreation",
+			"Properties" : {
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - brokerHighCPUAlarm" ] ] },
+				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so high, triggers a scaling out",
+				"Namespace" : "AWS/EC2",
+				"MetricName" : "CPUUtilization",
+				"Dimensions" : [ {
+					"Name" : "AutoScalingGroupName",
+					"Value" : { "Ref" : "brokerGroup" }
+				} ], 
+				"EvaluationPeriods" : "1",
+				"Period" : "300",
+				"ComparisonOperator" : "GreaterThanThreshold",
+				"Threshold" : "65",
+				"Statistic" : "Average",
+				"ActionsEnabled" : "true",
+				"AlarmActions" : [ { "Ref" : "brokerScaleUpPolicy" } ]
+			}
+		},		
+		"brokerLowCPUAlarm" : {
+			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "brokerRoleCreation",
+			"Properties" : {
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - brokerLowCPUAlarm" ] ] },
+				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so low, triggers a scaling in",
+				"Namespace" : "AWS/EC2",
+				"MetricName" : "CPUUtilization",
+				"Dimensions" : [ {
+					"Name" : "AutoScalingGroupName",
+					"Value" : { "Ref" : "brokerGroup" }
+				} ], 
+				"EvaluationPeriods" : "3",
+				"Period" : "300",
+				"ComparisonOperator" : "LessThanThreshold",
+				"Threshold" : "40",
+				"Statistic" : "Average",
+				"ActionsEnabled" : "true",
+				"AlarmActions" : [ { "Ref" : "brokerScaleDownPolicy" } ]
+			}
+		},
+		"brokerScaleUpPolicy" : {
+			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "brokerRoleCreation",
+			"Properties" : {
+				"AdjustmentType" : "ChangeInCapacity",
+				"AutoScalingGroupName" : { "Ref" : "brokerGroup" },
+				"Cooldown" : "900",
+				"ScalingAdjustment" : "1"
+			}
+		},
+		"brokerScaleDownPolicy" : {
+			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "brokerRoleCreation",
+			"Properties" : {
+				"AdjustmentType" : "ChangeInCapacity",
+				"AutoScalingGroupName" : { "Ref" : "brokerGroup" },
+				"Cooldown" : "300",
+				"ScalingAdjustment" : "-1"
+			}
+		},
+
 		"middlemanagerGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
 			"DependsOn" : "kafkaGroup",
@@ -1867,6 +2052,13 @@
 				"LaunchConfigurationName" : { "Ref" : "middlemanagerLaunch" },
 				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "middlemanager" ] },
 				"MaxSize" : "10",
+				"NotificationConfiguration" : {
+					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
+          			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
+                        					"autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE_ERROR" ]        			
+      			},
 				"Tags" : [ {
 					"Key" : "Role",
 					"Value" : "middlemanager",
@@ -1903,7 +2095,7 @@
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
-				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
+				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "middlemanager", { "Ref" : "InstanceSize" } ] },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
@@ -1931,6 +2123,7 @@
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
 					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=middlemanagerGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -1953,6 +2146,16 @@
 					". /opt/rb/bin/rb_set_aws_interface.sh",
 					"\n"
 				] ] } }
+			}
+		},
+		"middleManagerLifecycleHook" : {
+			"Type" : "AWS::AutoScaling::LifecycleHook",
+			"Condition" : "middlemanagerRoleCreation",
+			"Properties" : {
+				"AutoScalingGroupName" : { "Ref" : "middlemanagerGroup"  },
+				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
+				"NotificationTargetARN" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] }, 
+				"RoleARN" : { "Fn::GetAtt" : [ "IAMRoleLifecycleHook", "Arn" ] }
 			}
 		},
 		"middlemanagerHighCapacityAlarm" : {
@@ -2024,7 +2227,7 @@
 				"ComparisonOperator" : "LessThanOrEqualToThreshold",
 				"Threshold" : "40",
 				"Statistic" : "Average",
-				"AlarmActions" : [ { "Ref" : "SNSTopic" } ]
+				"AlarmActions" : [ { "Ref" : "SNSManagementTopic" } ]
 			}
 		},
 
@@ -2037,6 +2240,13 @@
 				"LaunchConfigurationName" : { "Ref" : "historicalLaunch" },
 				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "historical" ] },
 				"MaxSize" : "10",
+				"NotificationConfiguration" : {
+					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
+          			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
+                        					"autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE_ERROR" ]        			
+      			},
 				"Tags" : [ {
 					"Key" : "Role",
 					"Value" : "historical",
@@ -2073,7 +2283,7 @@
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
-				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
+				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "historical", { "Ref" : "InstanceSize" } ] },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
@@ -2101,6 +2311,7 @@
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
 					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=historicalGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -2114,7 +2325,8 @@
 					"{\n",
 					"  \"redBorder\" : {\n",
 					"    \"aws\" : {\n",
-					"      \"cloudwatch\" : \"true\"\n",
+					"      \"cloudwatch\" : \"true\",\n",
+					"      \"autoscaled\" : \"true\"\n",
 					"    }\n",
 					"  }\n",
 					"}\n",
@@ -2124,6 +2336,79 @@
 				] ] } }
 			}
 		},
+		"historicalLifecycleHook" : {
+			"Type" : "AWS::AutoScaling::LifecycleHook",
+			"Condition" : "historicalRoleCreation",
+			"Properties" : {
+				"AutoScalingGroupName" : { "Ref" : "historicalGroup"  },
+				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
+				"NotificationTargetARN" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] }, 
+				"RoleARN" : { "Fn::GetAtt" : [ "IAMRoleLifecycleHook", "Arn" ] }
+			}
+		},
+		"historicalHighDiskAlarm" : {
+			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "historicalRoleCreation",
+			"Properties" : {
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalHighRAMAlarm" ] ] },
+				"AlarmDescription" : "Alarm for historical hot autoscaling. When disk usage is so high, triggers a scaling out",
+				"Namespace" : "AWS/Linux System",
+				"MetricName" : "DiskSpaceUtilization",
+				"Dimensions" : [ {
+					"Name" : "AutoScalingGroupName",
+					"Value" : { "Ref" : "historicalGroup" }
+				} ], 
+				"EvaluationPeriods" : "2",
+				"Period" : "300",
+				"ComparisonOperator" : "GreaterThanThreshold",
+				"Threshold" : "80",
+				"Statistic" : "Average",
+				"ActionsEnabled" : "true",
+				"AlarmActions" : [ { "Ref" : "historicalScaleUpPolicy" } ]
+			}
+		},
+		"historicalLowDiskAlarm" : {
+			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "historicalRoleCreation",
+			"Properties" : {
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalLowRAMAlarm" ] ] },
+				"AlarmDescription" : "Alarm for historical hot  autoscaling. When disk usage is so low, triggers a scaling in",
+				"Namespace" : "AWS/Linux System",
+				"MetricName" : "DiskSpaceUtilization",
+				"Dimensions" : [ {
+					"Name" : "AutoScalingGroupName",
+					"Value" : { "Ref" : "historicalGroup" }
+				} ], 
+				"EvaluationPeriods" : "4",
+				"Period" : "300",
+				"ComparisonOperator" : "LessThanThreshold",
+				"Threshold" : "30",
+				"Statistic" : "Average",
+				"ActionsEnabled" : "true",
+				"AlarmActions" : [ { "Ref" : "historicalScaleDownPolicy" } ]
+			}
+		},
+		"historicalScaleUpPolicy" : {
+			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "historicalRoleCreation",
+			"Properties" : {
+				"AdjustmentType" : "ChangeInCapacity",
+				"AutoScalingGroupName" : { "Ref" : "historicalGroup" },
+				"Cooldown" : "900",
+				"ScalingAdjustment" : "1"
+			}
+		}, 
+		"historicalScaleDownPolicy" : {
+			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "historicalRoleCreation",
+			"Properties" : {
+				"AdjustmentType" : "ChangeInCapacity",
+				"AutoScalingGroupName" : { "Ref" : "historicalGroup" },
+				"Cooldown" : "900",
+				"ScalingAdjustment" : "-1"
+			}
+		}, 
+
 		"historicalhotGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
 			"Condition" : "historicalhotRoleCreation",
@@ -2133,6 +2418,13 @@
 				"LaunchConfigurationName" : { "Ref" : "historicalhotLaunch" },
 				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "historicalhot" ] },
 				"MaxSize" : "10",
+				"NotificationConfiguration" : {
+					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
+          			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
+                        					"autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE_ERROR" ]        			
+      			},
 				"Tags" : [ {
 					"Key" : "Role",
 					"Value" : "historicalhot",
@@ -2169,7 +2461,7 @@
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
-				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
+				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "historicalhot", { "Ref" : "InstanceSize" } ] },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
@@ -2197,6 +2489,7 @@
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
 					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=historicalhotGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -2210,7 +2503,8 @@
 					"{\n",
 					"  \"redBorder\" : {\n",
 					"    \"aws\" : {\n",
-					"      \"cloudwatch\" : \"true\"\n",
+					"      \"cloudwatch\" : \"true\",\n",
+					"      \"autoscaled\" : \"true\"\n",
 					"     },\n",
 					"    \"druid\" : {\n",
 					"      \"historical\" : {\n",
@@ -2225,6 +2519,69 @@
 				] ] } }
 			}
 		},
+		"historicalhotHighRAMAlarm" : {
+			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "historicalhotRoleCreation",
+			"Properties" : {
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalHotHighRAMAlarm" ] ] },
+				"AlarmDescription" : "Alarm for historical hot autoscaling. When RAM is so high, triggers a scaling out",
+				"Namespace" : "AWS/Linux System",
+				"MetricName" : "MemoryUtilization",
+				"Dimensions" : [ {
+					"Name" : "AutoScalingGroupName",
+					"Value" : { "Ref" : "historicalhotGroup" }
+				} ], 
+				"EvaluationPeriods" : "1",
+				"Period" : "300",
+				"ComparisonOperator" : "GreaterThanThreshold",
+				"Threshold" : "80",
+				"Statistic" : "Average",
+				"ActionsEnabled" : "true",
+				"AlarmActions" : [ { "Ref" : "historicalhotScaleUpPolicy" } ]
+			}
+		},
+		"historicalhotLowRAMAlarm" : {
+			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "historicalhotRoleCreation",
+			"Properties" : {
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalHotLowRAMAlarm" ] ] },
+				"AlarmDescription" : "Alarm for historical hot  autoscaling. When RAM is so low, triggers a scaling in",
+				"Namespace" : "AWS/Linux System",
+				"MetricName" : "MemoryUtilization",
+				"Dimensions" : [ {
+					"Name" : "AutoScalingGroupName",
+					"Value" : { "Ref" : "historicalhotGroup" }
+				} ], 
+				"EvaluationPeriods" : "3",
+				"Period" : "300",
+				"ComparisonOperator" : "LessThanThreshold",
+				"Threshold" : "30",
+				"Statistic" : "Average",
+				"ActionsEnabled" : "true",
+				"AlarmActions" : [ { "Ref" : "historicalhotScaleDownPolicy" } ]
+			}
+		},
+		"historicalhotScaleUpPolicy" : {
+			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "historicalhotRoleCreation",
+			"Properties" : {
+				"AdjustmentType" : "ChangeInCapacity",
+				"AutoScalingGroupName" : { "Ref" : "historicalhotGroup" },
+				"Cooldown" : "900",
+				"ScalingAdjustment" : "1"
+			}
+		}, 
+		"historicalhotScaleDownPolicy" : {
+			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "historicalhotRoleCreation",
+			"Properties" : {
+				"AdjustmentType" : "ChangeInCapacity",
+				"AutoScalingGroupName" : { "Ref" : "historicalhotGroup" },
+				"Cooldown" : "900",
+				"ScalingAdjustment" : "-1"
+			}
+		}, 
+
 		"samzaGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
 			"Condition" : "samzaRoleCreation",
@@ -2234,6 +2591,13 @@
 				"LaunchConfigurationName" : { "Ref" : "samzaLaunch" },
 				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "samza" ] },
 				"MaxSize" : "10",
+				"NotificationConfiguration" : {
+					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
+          			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
+                        					"autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE_ERROR" ]        			
+      			},
 				"Tags" : [ {
 					"Key" : "Role",
 					"Value" : "samza",
@@ -2270,7 +2634,7 @@
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
-				"SecurityGroups" : [ { "Ref" : "redBorderSecurityGroup" } ],
+				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "samza", { "Ref" : "InstanceSize" } ] },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
@@ -2298,6 +2662,7 @@
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
 					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=samzaGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
@@ -2359,7 +2724,8 @@
  			"Type" : "AWS::EC2::NetworkInterface",
 			"Condition" : "openVPNInstanceCreation", 
 			"Properties" : {
-				"SubnetId" : { "Ref" : "PrivateSubnet" }
+				"SubnetId" : { "Ref" : "PrivateSubnet" },
+				"GroupSet" : [ { "Ref" : "redBorderPrivateSecurityGroup" } ]
 			}
 		}, 
 		"privateInterfaceAttachmentOpenVPN" : {
