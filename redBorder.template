@@ -1387,7 +1387,7 @@
 					"" ] },
 					"ENRICHMODE=samza\n",
 					"MMDOWNALARMNAME=\"", { "Ref" : "middlemanagerLowCapacityAlarm" }, "\"\n",
-					"CMDFINISH='rb_druid_rules.rb -t _default -p pt12h -r 1 -d forever -i 1'",
+					"CMDFINISH='rb_druid_rules.rb -t _default -p pt1d -r 2 -d forever -i 1'",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -2346,19 +2346,19 @@
 				"RoleARN" : { "Fn::GetAtt" : [ "IAMRoleLifecycleHook", "Arn" ] }
 			}
 		},
-		"historicalHighDiskAlarm" : {
+		"historicalHighCapacityAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
 			"Condition" : "historicalRoleCreation",
 			"Properties" : {
-				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalHighRAMAlarm" ] ] },
-				"AlarmDescription" : "Alarm for historical hot autoscaling. When disk usage is so high, triggers a scaling out",
-				"Namespace" : "AWS/Linux System",
-				"MetricName" : "DiskSpaceUtilization",
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalHighCapacityAlarm" ] ] },
+				"AlarmDescription" : "Alarm for historical hot autoscaling. When capacity is so high, triggers a scaling out",
+				"Namespace" : { "Fn::Join" : [ "", [ "rB/", { "Ref" : "AWS::StackName" } ] ] },
+				"MetricName" : "default_tier_capacity",
 				"Dimensions" : [ {
-					"Name" : "AutoScalingGroupName",
-					"Value" : { "Ref" : "historicalGroup" }
+					"Name" : "InstanceId",
+					"Value" : "coordinator"
 				} ], 
-				"EvaluationPeriods" : "2",
+				"EvaluationPeriods" : "1",
 				"Period" : "300",
 				"ComparisonOperator" : "GreaterThanThreshold",
 				"Threshold" : "80",
@@ -2367,22 +2367,22 @@
 				"AlarmActions" : [ { "Ref" : "historicalScaleUpPolicy" } ]
 			}
 		},
-		"historicalLowDiskAlarm" : {
+		"historicalLowCapacityAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
 			"Condition" : "historicalRoleCreation",
 			"Properties" : {
-				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalLowRAMAlarm" ] ] },
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalLowCapacityAlarm" ] ] },
 				"AlarmDescription" : "Alarm for historical hot  autoscaling. When disk usage is so low, triggers a scaling in",
-				"Namespace" : "AWS/Linux System",
-				"MetricName" : "DiskSpaceUtilization",
+				"Namespace" : { "Fn::Join" : [ "", [ "rB/", { "Ref" : "AWS::StackName" } ] ] },
+				"MetricName" : "default_tier_capacity",
 				"Dimensions" : [ {
-					"Name" : "AutoScalingGroupName",
-					"Value" : { "Ref" : "historicalGroup" }
-				} ], 
-				"EvaluationPeriods" : "4",
+					"Name" : "InstanceId",
+					"Value" : "coordinator"
+				} ],
+				"EvaluationPeriods" : "3",
 				"Period" : "300",
 				"ComparisonOperator" : "LessThanThreshold",
-				"Threshold" : "30",
+				"Threshold" : "40",
 				"Statistic" : "Average",
 				"ActionsEnabled" : "true",
 				"AlarmActions" : [ { "Ref" : "historicalScaleDownPolicy" } ]
@@ -2519,18 +2519,18 @@
 				] ] } }
 			}
 		},
-		"historicalhotHighRAMAlarm" : {
+		"historicalhotHighCapacityAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
 			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
-				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalHotHighRAMAlarm" ] ] },
-				"AlarmDescription" : "Alarm for historical hot autoscaling. When RAM is so high, triggers a scaling out",
-				"Namespace" : "AWS/Linux System",
-				"MetricName" : "MemoryUtilization",
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalHotHighCapacityAlarm" ] ] },
+				"AlarmDescription" : "Alarm for historical hot autoscaling. When capacity is so high, triggers a scaling out",
+				"Namespace" : { "Fn::Join" : [ "", [ "rB/", { "Ref" : "AWS::StackName" } ] ] },
+				"MetricName" : "hot_tier_capacity",
 				"Dimensions" : [ {
-					"Name" : "AutoScalingGroupName",
-					"Value" : { "Ref" : "historicalhotGroup" }
-				} ], 
+					"Name" : "InstanceId",
+					"Value" : "coordinator"
+				} ],  
 				"EvaluationPeriods" : "1",
 				"Period" : "300",
 				"ComparisonOperator" : "GreaterThanThreshold",
@@ -2540,17 +2540,17 @@
 				"AlarmActions" : [ { "Ref" : "historicalhotScaleUpPolicy" } ]
 			}
 		},
-		"historicalhotLowRAMAlarm" : {
+		"historicalhotLowCapacityAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
 			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalHotLowRAMAlarm" ] ] },
 				"AlarmDescription" : "Alarm for historical hot  autoscaling. When RAM is so low, triggers a scaling in",
-				"Namespace" : "AWS/Linux System",
-				"MetricName" : "MemoryUtilization",
+				"Namespace" : { "Fn::Join" : [ "", [ "rB/", { "Ref" : "AWS::StackName" } ] ] },
+				"MetricName" : "hot_tier_capacity",
 				"Dimensions" : [ {
-					"Name" : "AutoScalingGroupName",
-					"Value" : { "Ref" : "historicalhotGroup" }
+					"Name" : "InstanceId",
+					"Value" : "coordinator"
 				} ], 
 				"EvaluationPeriods" : "3",
 				"Period" : "300",
