@@ -2022,6 +2022,48 @@
 				"AlarmActions" : [ { "Ref" : "brokerScaleDownPolicy" } ]
 			}
 		},
+		"brokerHighRAMAlarm" : {
+			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "brokerRoleCreation",
+			"Properties" : {
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - brokerHighRAMAlarm" ] ] },
+				"AlarmDescription" : "Alarm for web autoscaling. When RAM is so high, triggers a scaling out",
+				"Namespace" : "System/Linux",
+				"MetricName" : "MemoryUtilization",
+				"Dimensions" : [ {
+					"Name" : "AutoScalingGroupName",
+					"Value" : { "Ref" : "brokerGroup" }
+				} ], 
+				"EvaluationPeriods" : "1",
+				"Period" : "300",
+				"ComparisonOperator" : "GreaterThanThreshold",
+				"Threshold" : "85",
+				"Statistic" : "Average",
+				"ActionsEnabled" : "true",
+				"AlarmActions" : [ { "Ref" : "brokerScaleUpPolicy" } ]
+			}
+		},		
+		"brokerLowRAMAlarm" : {
+			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "brokerRoleCreation",
+			"Properties" : {
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - brokerLowRAMAlarm" ] ] },
+				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so low, triggers a scaling in",
+				"Namespace" : "System/Linux",
+				"MetricName" : "MemoryUtilization",
+				"Dimensions" : [ {
+					"Name" : "AutoScalingGroupName",
+					"Value" : { "Ref" : "brokerGroup" }
+				} ], 
+				"EvaluationPeriods" : "3",
+				"Period" : "300",
+				"ComparisonOperator" : "LessThanThreshold",
+				"Threshold" : "40",
+				"Statistic" : "Average",
+				"ActionsEnabled" : "true",
+				"AlarmActions" : [ { "Ref" : "brokerScaleDownPolicy" } ]
+			}
+		},
 		"brokerScaleUpPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
 			"Condition" : "brokerRoleCreation",

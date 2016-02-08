@@ -11,7 +11,7 @@
 		"AMIOpenVPN" : {
 			"Description" : "openvpn for redBorder AMI to deploy",
 			"Type" : "String",
-			"Default" : "ami-bcd86fcf"
+			"Default" : "ami-a51fa9d6"
 		},
 		"NumberOfNodes" : {
 			"Description" : "number of nodes for redBorder cluster. Roles will be configured automatically",
@@ -25,7 +25,7 @@
 			"Description" : "performance of each node (instance types). Instance types will be choosen automatically in function of this parameter",
 			"Type" : "String",
 			"AllowedValues" : [ "small", "medium", "large" ],
-			"Default" : "small"
+			"Default" : "medium"
 		}, 
 		"KeyName" : {
 			"Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instances",
@@ -40,8 +40,7 @@
 		},
 		"CDOMAIN" : {
 			"Description" : "DNS Domain for cluster",
-			"Type" : "String", 
-			"Default" : "redbordercloud.com"
+			"Type" : "String"			
 		},
 		"WebSSLCertificateName" : {
 			"Description" : "SSL Certificate for web load balancer",
@@ -51,36 +50,6 @@
 			"Description" : "SSL Certificate for data load balancer",
 			"Type" : "String"
 		},
-		"UseRDS" : {
-			"Description" : "Indicates if you want to use AWS Relational Database Service for PostgreSQL or you prefer to use PostgreSQL provided by redBorder",
-			"Type" : "String",
-			"AllowedValues" : [ "true", "false" ],
-			"Default" : "false"
-		},
-		"UseElasticache" : {
-			"Description" : "Indicates if you want to use AWS Elasticache for Memcached or you prefer to use Memcached provided by redBorder",
-			"Type" : "String",
-			"AllowedValues" : [ "true", "false" ],
-			"Default" : "false"
-		},
-		"CreateMasterName" : {
-			"Description" : "Indicates if you want to assign a master.cdomain name to master instance",
-			"Type" : "String",
-			"AllowedValues" : [ "true", "false" ],
-			"Default" : "false"
-		},
-		"CreateInternalLoadBalancers" : {
-			"Description" : "Indicates if you want internal load balancers (only for cisco environments)",
-			"Type" : "String",
-			"AllowedValues" : [ "true", "false" ],
-			"Default" : "false"
-		},
-		"CreateOpenVPNInstance" : {
-			"Description" : "Indicates if you want VPN access to public and private subnets",
-			"Type" : "String",
-			"AllowedValues" : [ "true", "false" ],
-			"Default" : "true"
-		},
 		"openVPNAdminPasswd" : {
 			"Description" : "Password for administrator access to OpenVPN server (with user redborder)",
 			"Type" : "String",
@@ -88,17 +57,7 @@
 			"MinLength" : "0",
 			"MaxLength"	: "41",
 			"ConstraintDescription" : "must contain only alphanumeric characters and must have a minium of 8 characters and a maximum of 41"		
-		},
-		"DBPassword": {
-			"NoEcho": "true",
-			"Description" : "The database admin account password",
-			"Default" : "AWSrdsForredBorder", 
-			"Type": "String",
-			"MinLength": "0",
-			"MaxLength": "41",
-			"AllowedPattern" : "[a-zA-Z0-9]*",
-			"ConstraintDescription" : "must contain only alphanumeric characters and must have a minium of 8 characters and a maximum of 41"
-		}
+		}		
 	},
 
 	"Mappings" : {
@@ -117,7 +76,8 @@
 			"12" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"2", "historical":"1", "historicalhot":"1", "samza":"1" },
 			"13" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"3", "historical":"1", "historicalhot":"1", "samza":"1" },
 			"14" : { "master": "0", "custom":"0", "corezk":"3", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"2", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"15" : { "master": "0", "custom":"0", "corezk":"3", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"3", "historical":"1", "historicalhot":"1", "samza":"1" }
+			"15" : { "master": "0", "custom":"0", "corezk":"3", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"3", "historical":"1", "historicalhot":"1", "samza":"1" },
+			"16" : { "master": "0", "custom":"0", "corezk":"3", "kafka":"2", "http2k": "2", "web":"2", "broker":"1", "middlemanager":"3", "historical":"1", "historicalhot":"1", "samza":"1" }
 		},
 
 		"InstanceTypeMap" : {
@@ -170,23 +130,7 @@
 		},
 		"samzaRoleCreation" : {
 			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "samza" ] } ] } ]
-		},
-		"RDSCreation" : {
-			"Fn::Equals" : [ "true", { "Ref" : "UseRDS" } ]
-		},
-		"ElasticacheCreation" : {
-			"Fn::Equals" : [ "true", { "Ref" : "UseElasticache" } ]
-		},
-		"masterNameCreation" : {
-			"Fn::Equals" : [ "true", { "Ref" : "CreateMasterName" } ]
-		},
-		"openVPNInstanceCreation" : {
-			"Fn::Equals" : [ "true", { "Ref" : "CreateOpenVPNInstance" } ]
-		},
-		"InternalLoadBalancerCreation" : {
-			"Fn::And" : [ { "Fn::Equals" : [ "true", { "Ref" : "CreateInternalLoadBalancers" } ] }, 
-				{ "Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "corezk" ] } ] } ] } ]
-		}
+		}		
 	},
 	
 	"Resources" : {
@@ -487,70 +431,7 @@
 				}]
 			}
 		},
-		"DBRDS" : {
-			"Type" : "AWS::RDS::DBInstance",
-			"Condition" : "RDSCreation",
-			"Properties" : {
-				"AllocatedStorage" : "50",
-				"DBInstanceClass" : { "Fn::FindInMap" : [ "InstanceTypeMap", "rds", { "Ref" : "InstanceSize" } ] },
-				"Engine" : "postgres",
-				"DBName" : "redborderRDS",
-				"MasterUsername" : "rdsredborder",
-				"MasterUserPassword" : { "Ref" : "DBPassword" }, 
-				"PubliclyAccessible" : "false",
-				"BackupRetentionPeriod" : "7",
-				"MultiAZ" : "true",
-				"StorageType" : "gp2",
-				"DBSubnetGroupName" : { "Ref" : "DBSubnetGroup" },
-				"VPCSecurityGroups" : [ { "Ref" : "DataBaseSecurityGroup" } ]
-			}
-		},
-		"DBSubnetGroup" : {
-			"Type" : "AWS::RDS::DBSubnetGroup",
-			"Condition" : "RDSCreation",
-			"Properties" : {
-				"DBSubnetGroupDescription" : "redBorder RDS subnet group",
-				"SubnetIds" : [ { "Ref" : "PrivateSubnet" }, { "Ref" : "BackupSubnet" } ]
-			}
-		}, 
-		"Memcached" : {
-			"Type" : "AWS::ElastiCache::CacheCluster",
-			"Condition" : "ElasticacheCreation",
-			"Properties" : {
-				"Engine" : "memcached", 
-				"PreferredAvailabilityZone" : { "Fn::GetAtt" : [ "PrivateSubnet", "AvailabilityZone" ] },
-				"NumCacheNodes" : "1",
-				"CacheNodeType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "memcached", { "Ref" : "InstanceSize" } ] }, 
-				"CacheSubnetGroupName" : { "Ref" : "MemcachedSubnetGroup" },
-				"VpcSecurityGroupIds" : [ { "Ref" : "MemcachedSecurityGroup" } ]
-			}
-		},
-		"MemcachedSubnetGroup" : {
-			"Type" : "AWS::ElastiCache::SubnetGroup",
-			"Condition" : "ElasticacheCreation",
-			"Properties" : {
-				"Description" : "Subnet Group for Memcached", 
-				"SubnetIds" : [ { "Ref" : "PrivateSubnet" }, { "Ref" : "BackupSubnet" } ]
-			}
-		},  
-		"MemcachedSecurityGroup" : {
-			"Type" : "AWS::EC2::SecurityGroup",
-			"Condition" : "ElasticacheCreation",
-			"Properties" : {
-				"GroupDescription" : "Enable access to DataBase for VPC instances",
-				"VpcId" : { "Ref" : "VPC" },
-				"SecurityGroupIngress" : [ {
-					"IpProtocol" : "tcp",
-					"FromPort" : "11211",
-					"ToPort" : "11211",
-					"CidrIp" : "172.16.0.0/16"
-				} ],
-				"Tags" : [ {
-					"Key" : "Cluster",
-					"Value" : { "Ref" : "AWS::StackName" }
-				} ]
-			}
-		},
+
 		"redBorderPublicSecurityGroup" : {
 			"Type" : "AWS::EC2::SecurityGroup",
 			"Properties" : {
@@ -558,9 +439,9 @@
 				"VpcId" : { "Ref" : "VPC" },
 				"SecurityGroupIngress" : [ {
 					"IpProtocol" : "tcp",
-					"FromPort" : { "Fn::If" : [ "openVPNInstanceCreation", "22", "6666" ] },
-					"ToPort" : { "Fn::If" : [ "openVPNInstanceCreation", "22", "6666" ] },
-					"CidrIp" : { "Fn::If" : [ "openVPNInstanceCreation", "172.16.1.0/24", "0.0.0.0/0" ] } 
+					"FromPort" : "22",
+					"ToPort" : "22",
+					"CidrIp" : "172.16.1.0/24" 
 				}, {
 					"IpProtocol" : "tcp",
 					"FromPort" : "80",
@@ -621,7 +502,6 @@
 
 		"openVPNSecurityGroup" : {
 			"Type" : "AWS::EC2::SecurityGroup",
-			"Condition" : "openVPNInstanceCreation",
 			"Properties" : {
 				"GroupDescription" : "Enable ports for OpenVPN service Port 943 is for administrator web access",
 				"VpcId" : { "Ref" : "VPC" },
@@ -677,7 +557,6 @@
 		},
 		"CoreLoadBalancerSecurityGroup" : {
 			"Type" : "AWS::EC2::SecurityGroup",
-			"Condition" : "InternalLoadBalancerCreation",
 			"Properties" : {
 				"GroupDescription" : "Enable erchef, postgresql, pgpool, resourcemanager and namenode traffic",
 				"VpcId" : { "Ref" : "VPC" },
@@ -695,7 +574,6 @@
 		},
 		"KafkaLoadBalancerSecurityGroup" : {
 			"Type" : "AWS::EC2::SecurityGroup",
-			"Condition" : "InternalLoadBalancerCreation",
 			"Properties" : {
 				"GroupDescription" : "Enable Kafka TCP traffic",
 				"VpcId" : { "Ref" : "VPC" },
@@ -711,24 +589,7 @@
 				} ]
 			}
 		},
-		"DataBaseSecurityGroup" : {
-			"Type" : "AWS::EC2::SecurityGroup",
-			"Properties" : {
-				"GroupDescription" : "Enable access to DataBase for VPC instances",
-				"VpcId" : { "Ref" : "VPC" },
-				"SecurityGroupIngress" : [ {
-					"IpProtocol" : "tcp",
-					"FromPort" : "5432",
-					"ToPort" : "5432",
-					"CidrIp" : "172.16.0.0/16"
-				} ],
-				"Tags" : [ {
-					"Key" : "Cluster",
-					"Value" : { "Ref" : "AWS::StackName" }
-				} ]
-			}
-		},
-		
+				
 		"PublicHostedZone" : { 
 			"Type" : "AWS::Route53::HostedZone",
 			"Properties" : {
@@ -794,8 +655,7 @@
 			}
 		},
 		"ErchefName" : {
-			"Type" : "AWS::Route53::RecordSet",
-			"Condition" : "InternalLoadBalancerCreation",
+			"Type" : "AWS::Route53::RecordSet",			
 			"Properties" : {
 				"HostedZoneId" : { "Ref" : "PrivateHostedZone" },
 				"Name" : { "Fn::Join" : [ "", [ "erchef.", { "Ref" : "CDOMAIN" } ] ] },
@@ -807,8 +667,7 @@
 			}
 		},
 		"KafkaName" : {
-			"Type" : "AWS::Route53::RecordSet",
-			"Condition" : "InternalLoadBalancerCreation",
+			"Type" : "AWS::Route53::RecordSet",			
 			"Properties" : {
 				"HostedZoneId" : { "Ref" : "PrivateHostedZone" },
 				"Name" : { "Fn::Join" : [ "", [ "kafka.", { "Ref" : "CDOMAIN" } ] ] },
@@ -820,8 +679,7 @@
 			}
 		},
 		"OpenVPNPublicName" : {
-			"Type" : "AWS::Route53::RecordSet",
-			"Condition" : "openVPNInstanceCreation",
+			"Type" : "AWS::Route53::RecordSet",			
 			"Properties" : {
 				"Type" : "A",
 				"HostedZoneId" : { "Ref" : "PublicHostedZone" }, 
@@ -831,8 +689,7 @@
 			}
 		},
 		"OpenVPNPrivateName" : {
-			"Type" : "AWS::Route53::RecordSet",
-			"Condition" : "openVPNInstanceCreation",
+			"Type" : "AWS::Route53::RecordSet",			
 			"Properties" : {
 				"Type" : "A",
 				"HostedZoneId" : { "Ref" : "PrivateHostedZone" }, 
@@ -903,7 +760,6 @@
 		},
 		"CoreElasticLoadBalancer" : {
 			"Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
-			"Condition" : "InternalLoadBalancerCreation",
 			"Properties" : {
 				"CrossZone" : "true",
 				"SecurityGroups" : [ { "Ref" : "WebLoadBalancerSecurityGroup" } ], 
@@ -932,7 +788,6 @@
 		},
 		"KafkaElasticLoadBalancer" : {
 			"Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
-			"Condition" : "InternalLoadBalancerCreation",
 			"Properties" : {
 				"CrossZone" : "true",
 				"SecurityGroups" : [ { "Ref" : "KafkaLoadBalancerSecurityGroup" } ], 
@@ -1045,25 +900,12 @@
 					"S3TYPE=aws\n",
 					"CLOUDDNS=1\n",
 					"LBINTERNAL=0\n",
-					{ "Fn::If" : [ "masterNameCreation", "ROUTE53NAMES=master\n", "" ] },
+					"ROUTE53NAMES=master\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
 					"CHEF_AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKeyChef" }, "\"\n",
 					"CHEF_AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKeyChef", "SecretAccessKey" ] }, "\"\n",
-					{ "Fn::If" : [ "ElasticacheCreation", { "Fn::Join" : [ "", [ 
-						"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
-						"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
-						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n"
-						] ] },
-					"" ] },
-					{ "Fn::If" : [ "RDSCreation", { "Fn::Join" : [ "", [ 
-						"SQLUSER=rdsredborder\n",
-						"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
-						"SQLDB=redborderRDS\n", 
-						"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
-							{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n"
-						] ] }, 
-					"" ] },
+					
 					"ENRICHMODE=samza\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
@@ -1281,7 +1123,7 @@
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "corezkLaunch" },
-				"LoadBalancerNames" : { "Fn::If" : [ "InternalLoadBalancerCreation", [ { "Ref" : "CoreElasticLoadBalancer" } ], { "Ref" : "AWS::NoValue" } ] },
+				"LoadBalancerNames" : [ { "Ref" : "CoreElasticLoadBalancer" } ],
 				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "corezk" ] },
 				"MaxSize" : "10",
 				"NotificationConfiguration" : {
@@ -1365,26 +1207,12 @@
 					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
 					"S3TYPE=aws\n",
 					"CLOUDDNS=1\n",
-					{ "Fn::If" : [ "InternalLoadBalancerCreation",  "LBINTERNAL=1\n", "LBINTERNAL=0\n" ] },
-					{ "Fn::If" : [ "masterNameCreation", "ROUTE53NAMES=master\n", "" ] },
+					"LBINTERNAL=1\n",
+					"ROUTE53NAMES=master\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
 					"CHEF_AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKeyChef" }, "\"\n",
-					"CHEF_AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKeyChef", "SecretAccessKey" ] }, "\"\n",
-					{ "Fn::If" : [ "ElasticacheCreation", { "Fn::Join" : [ "", [ 
-						"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
-						"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
-						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n"
-						] ] },
-					"" ] },
-					{ "Fn::If" : [ "RDSCreation", { "Fn::Join" : [ "", [ 
-						"SQLUSER=rdsredborder\n",
-						"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
-						"SQLDB=redborderRDS\n", 
-						"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
-							{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n"
-						] ] }, 
-					"" ] },
+					"CHEF_AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKeyChef", "SecretAccessKey" ] }, "\"\n",					
 					"ENRICHMODE=samza\n",
 					"MMDOWNALARMNAME=\"", { "Ref" : "middlemanagerLowCapacityAlarm" }, "\"\n",
 					"CMDFINISH='rb_druid_rules.rb -t _default -p pt1d -r 2 -d forever -i 1'",
@@ -1411,7 +1239,7 @@
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "kafkaLaunch" },
-				"LoadBalancerNames" : { "Fn::If" : [ "InternalLoadBalancerCreation", [ { "Ref" : "KafkaElasticLoadBalancer" } ], { "Ref" : "AWS::NoValue" } ] },
+				"LoadBalancerNames" : [ { "Ref" : "KafkaElasticLoadBalancer" } ],
 				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "kafka" ] },
 				"MaxSize" : "10",
 				"NotificationConfiguration" : {
@@ -1822,17 +1650,7 @@
 				"ActionsEnabled" : "true",
 				"AlarmActions" : [ { "Ref" : "webScaleUpPolicy" } ]
 			}
-		},
-		"webScaleUpPolicy" : {
-			"Type" : "AWS::AutoScaling::ScalingPolicy",
-			"Condition" : "webRoleCreation",
-			"Properties" : {
-				"AdjustmentType" : "ChangeInCapacity",
-				"AutoScalingGroupName" : { "Ref" : "webGroup" },
-				"Cooldown" : "900",
-				"ScalingAdjustment" : "1"
-			}
-		},
+		},		
 		"webLowCPUAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
 			"Condition" : "webRoleCreation",
@@ -1854,6 +1672,17 @@
 				"AlarmActions" : [ { "Ref" : "webScaleDownPolicy" } ]
 			}
 		},
+		"webScaleUpPolicy" : {
+			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "webRoleCreation",
+			"Properties" : {
+				"AdjustmentType" : "ChangeInCapacity",
+				"AutoScalingGroupName" : { "Ref" : "webGroup" },
+				"Cooldown" : "900",
+				"ScalingAdjustment" : "1"
+			}
+		},
+
 		"webScaleDownPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
 			"Condition" : "webRoleCreation",
@@ -2009,6 +1838,48 @@
 				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so low, triggers a scaling in",
 				"Namespace" : "AWS/EC2",
 				"MetricName" : "CPUUtilization",
+				"Dimensions" : [ {
+					"Name" : "AutoScalingGroupName",
+					"Value" : { "Ref" : "brokerGroup" }
+				} ], 
+				"EvaluationPeriods" : "3",
+				"Period" : "300",
+				"ComparisonOperator" : "LessThanThreshold",
+				"Threshold" : "40",
+				"Statistic" : "Average",
+				"ActionsEnabled" : "true",
+				"AlarmActions" : [ { "Ref" : "brokerScaleDownPolicy" } ]
+			}
+		},
+		"brokerHighRAMAlarm" : {
+			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "brokerRoleCreation",
+			"Properties" : {
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - brokerHighRAMAlarm" ] ] },
+				"AlarmDescription" : "Alarm for web autoscaling. When RAM is so high, triggers a scaling out",
+				"Namespace" : "System/Linux",
+				"MetricName" : "MemoryUtilization",
+				"Dimensions" : [ {
+					"Name" : "AutoScalingGroupName",
+					"Value" : { "Ref" : "brokerGroup" }
+				} ], 
+				"EvaluationPeriods" : "1",
+				"Period" : "300",
+				"ComparisonOperator" : "GreaterThanThreshold",
+				"Threshold" : "85",
+				"Statistic" : "Average",
+				"ActionsEnabled" : "true",
+				"AlarmActions" : [ { "Ref" : "brokerScaleUpPolicy" } ]
+			}
+		},		
+		"brokerLowRAMAlarm" : {
+			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "brokerRoleCreation",
+			"Properties" : {
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - brokerLowRAMAlarm" ] ] },
+				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so low, triggers a scaling in",
+				"Namespace" : "System/Linux",
+				"MetricName" : "MemoryUtilization",
 				"Dimensions" : [ {
 					"Name" : "AutoScalingGroupName",
 					"Value" : { "Ref" : "brokerGroup" }
@@ -2688,7 +2559,6 @@
 		},
 		"openVPNInstance" : {
 			"Type" : "AWS::EC2::Instance",
-			"Condition" : "openVPNInstanceCreation",
 			"Properties" : {
 				"AvailabilityZone" : { "Fn::GetAtt" : [ "PublicSubnet", "AvailabilityZone" ] },
 				"ImageId" : { "Ref" : "AMIOpenVPN" },
@@ -2722,7 +2592,6 @@
 		}, 
 		"privateInterfaceOpenVPN" : {
  			"Type" : "AWS::EC2::NetworkInterface",
-			"Condition" : "openVPNInstanceCreation", 
 			"Properties" : {
 				"SubnetId" : { "Ref" : "PrivateSubnet" },
 				"GroupSet" : [ { "Ref" : "redBorderPrivateSecurityGroup" } ]
@@ -2730,7 +2599,6 @@
 		}, 
 		"privateInterfaceAttachmentOpenVPN" : {
 			"Type": "AWS::EC2::NetworkInterfaceAttachment",
-			"Condition" : "openVPNInstanceCreation", 
 			"Properties" : {
 				"DeleteOnTermination" : "true", 
 				"DeviceIndex" : "1",
