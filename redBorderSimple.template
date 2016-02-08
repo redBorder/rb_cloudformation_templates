@@ -91,9 +91,7 @@
 			"middlemanager" : { "small":"m4.large",       "medium":"r3.4xlarge",      "large":"r3.8xlarge"       },
 			"historical" :    { "small":"m4.large",       "medium":"c4.4xlarge",      "large":"c4.8xlarge"       },
 			"historicalhot" : { "small":"m4.large",       "medium":"m4.4xlarge",      "large":"m4.10xlarge"      },
-			"samza" :         { "small":"m4.xlarge",      "medium":"c4.4xlarge",      "large":"c4.8xlarge"       },
-			"rds" :           { "small":"db.m3.large",    "medium":"db.m3.2xlarge",   "large":"db.r3.large"      },
-			"memcached" :     { "small":"cache.t2.small", "medium":"cache.m3.xlarge", "large":"cache.m3.2xlarge" }
+			"samza" :         { "small":"m4.xlarge",      "medium":"c4.4xlarge",      "large":"c4.8xlarge"       }
 		}
 	},
 
