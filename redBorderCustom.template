@@ -13,13 +13,85 @@
 			"Type" : "String",
 			"Default" : "ami-bcd86fcf"
 		},
-		"NumberOfNodes" : {
-			"Description" : "number of nodes for redBorder cluster. Roles will be configured automatically",
+		"MinCorezkInstances" : {
+			"Description" : "minimun number of nodes for corezk role.",
 			"Type" : "Number",
 			"MinValue" : "1",
-			"MaxValue" : "20",
+			"MaxValue" : "10",
 			"Default" : "1",
-			"ConstraintDescription" : "number of nodes must between 1 and 20"
+			"ConstraintDescription" : "number of nodes must between 1 and 10"
+		},
+		"MinKafkaInstances" : {
+			"Description" : "minimun number of nodes for kafka role.",
+			"Type" : "Number",
+			"MinValue" : "1",
+			"MaxValue" : "10",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 1 and 10"
+		},
+		"MinWebInstances" : {
+			"Description" : "minimun number of nodes for web role.",
+			"Type" : "Number",
+			"MinValue" : "1",
+			"MaxValue" : "10",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 1 and 10"
+		},
+		"MinHttp2kInstances" : {
+			"Description" : "minimun number of nodes for http2k role.",
+			"Type" : "Number",
+			"MinValue" : "0",
+			"MaxValue" : "10",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 0 and 10"
+		},
+		"MinMiddlemanagerInstances" : {
+			"Description" : "minimun number of nodes for broker role.",
+			"Type" : "Number",
+			"MinValue" : "1",
+			"MaxValue" : "10",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 1 and 10"
+		},
+		"MinBrokerInstances" : {
+			"Description" : "minimun number of nodes for broker role.",
+			"Type" : "Number",
+			"MinValue" : "1",
+			"MaxValue" : "10",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 1 and 10"
+		},
+		"MinHistoricalInstances" : {
+			"Description" : "minimun number of nodes for historical role.",
+			"Type" : "Number",
+			"MinValue" : "1",
+			"MaxValue" : "10",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 1 and 10"
+		},
+		"MinHistoricalhotInstances" : {
+			"Description" : "minimun number of nodes for historicalhot role.",
+			"Type" : "Number",
+			"MinValue" : "1",
+			"MaxValue" : "10",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 1 and 10"
+		},
+		"MinSamzaInstances" : {
+			"Description" : "minimun number of nodes for samza role.",
+			"Type" : "Number",
+			"MinValue" : "1",
+			"MaxValue" : "10",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 1 and 10"
+		},
+		"HistoricalGenericInstances" : {
+			"Description" : "number of nodes for historialGeneric role.",
+			"Type" : "Number",
+			"MinValue" : "0",
+			"MaxValue" : "10",
+			"Default" : "0",
+			"ConstraintDescription" : "number of nodes must between 0 and 10"
 		},
 		"InstanceSize" : {
 			"Description" : "performance of each node (instance types). Instance types will be choosen automatically in function of this parameter",
@@ -102,75 +174,25 @@
 	},
 
 	"Mappings" : {
-		"RolesDistributionMap" : {
-			"1"  : { "master": "1", "custom":"0", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
-			"2"  : { "master": "1", "custom":"1", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
-			"3"  : { "master": "1", "custom":"2", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
-			"4"  : { "master": "1", "custom":"3", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
-			"5"  : { "master": "1", "custom":"4", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
-			"6"  : { "master": "1", "custom":"5", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
-			"7"  : { "master": "1", "custom":"6", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
-			"8"  : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "0", "web":"1", "broker":"1", "middlemanager":"1", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"9"  : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "1", "web":"1", "broker":"1", "middlemanager":"1", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"10" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "1", "web":"1", "broker":"1", "middlemanager":"2", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"11" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"2", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"12" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"2", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"13" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"3", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"14" : { "master": "0", "custom":"0", "corezk":"3", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"2", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"15" : { "master": "0", "custom":"0", "corezk":"3", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"3", "historical":"1", "historicalhot":"1", "samza":"1" }
-		},
-
 		"InstanceTypeMap" : {
-			"master" :        { "small":"m4.xlarge",      "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
-			"custom" :        { "small":"m4.large",       "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
-			"corezk" :        { "small":"m4.large",       "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
-			"kafka" :         { "small":"m4.large",       "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
-			"http2k" :        { "small":"m4.large",       "medium":"c4.xlarge",      "large":"c4.2xlarge"        },
-			"web" :           { "small":"m4.large",       "medium":"c4.2xlarge",      "large":"c4.4xlarge"       },
-			"broker" :        { "small":"m4.large",       "medium":"c4.2xlarge",      "large":"c4.4xlarge"       },
-			"middlemanager" : { "small":"m4.large",       "medium":"r3.4xlarge",      "large":"r3.8xlarge"       },
-			"historical" :    { "small":"m4.large",       "medium":"c4.4xlarge",      "large":"c4.8xlarge"       },
-			"historicalhot" : { "small":"m4.large",       "medium":"m4.4xlarge",      "large":"m4.10xlarge"      },
-			"samza" :         { "small":"m4.xlarge",      "medium":"c4.4xlarge",      "large":"c4.8xlarge"       },
-			"rds" :           { "small":"db.m3.large",    "medium":"db.m3.2xlarge",   "large":"db.r3.large"      },
-			"memcached" :     { "small":"cache.t2.small", "medium":"cache.m3.xlarge", "large":"cache.m3.2xlarge" }
+			"master" :            { "small":"m4.xlarge",      "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
+			"custom" :            { "small":"m4.large",       "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
+			"corezk" :            { "small":"m4.large",       "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
+			"kafka" :             { "small":"m4.large",       "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
+			"http2k" :            { "small":"m4.large",       "medium":"c4.xlarge",       "large":"c4.2xlarge"       },
+			"web" :               { "small":"m4.large",       "medium":"c4.2xlarge",      "large":"c4.4xlarge"       },
+			"broker" :            { "small":"m4.large",       "medium":"c4.2xlarge",      "large":"c4.4xlarge"       },
+			"middlemanager" :     { "small":"m4.large",       "medium":"r3.4xlarge",      "large":"r3.8xlarge"       },
+			"historical" :        { "small":"m4.large",       "medium":"c4.4xlarge",      "large":"c4.8xlarge"       },
+			"historicalhot" :     { "small":"m4.large",       "medium":"m4.4xlarge",      "large":"m4.10xlarge"      },
+			"historicalGeneric" : { "small":"m4.large",       "medium":"m4.4xlarge",      "large":"m4.10xlarge"      },
+			"samza" :             { "small":"m4.xlarge",      "medium":"c4.4xlarge",      "large":"c4.8xlarge"       },
+			"rds" :               { "small":"db.m3.large",    "medium":"db.m3.2xlarge",   "large":"db.r3.large"      },
+			"memcached" :         { "small":"cache.t2.small", "medium":"cache.m3.xlarge", "large":"cache.m3.2xlarge" }
 		}
 	},
 
-	"Conditions" : {
-		"masterRoleCreation" : {
-			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "master" ] } ] } ]
-		},
-		"customRoleCreation" : {
-			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "custom" ] } ] } ]
-		},
-		"corezkRoleCreation" : {
-			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "corezk" ] } ] } ]
-		},
-		"kafkaRoleCreation" : {
-			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "kafka" ] } ] } ]
-		},
-		"http2kRoleCreation" : {
-			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "http2k" ] } ] } ]
-		},
-		"webRoleCreation" : {
-			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "web" ] } ] } ]
-		},
-		"brokerRoleCreation" : { 
-			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "broker" ] } ] } ]
-		},
-		"middlemanagerRoleCreation" : {
-			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "middlemanager" ] } ] } ]
-		},
-		"historicalRoleCreation" : {
-			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "historical" ] } ] } ]
-		},
-		"historicalhotRoleCreation" : {
-			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "historicalhot" ] } ] } ]
-		},
-		"samzaRoleCreation" : {
-			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "samza" ] } ] } ]
-		},
+	"Conditions" : {		
 		"RDSCreation" : {
 			"Fn::Equals" : [ "true", { "Ref" : "UseRDS" } ]
 		},
@@ -184,8 +206,7 @@
 			"Fn::Equals" : [ "true", { "Ref" : "CreateOpenVPNInstance" } ]
 		},
 		"InternalLoadBalancerCreation" : {
-			"Fn::And" : [ { "Fn::Equals" : [ "true", { "Ref" : "CreateInternalLoadBalancers" } ] }, 
-				{ "Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "corezk" ] } ] } ] } ]
+			"Fn::Equals" : [ "true", { "Ref" : "CreateInternalLoadBalancers" } ]
 		}
 	},
 	
@@ -781,14 +802,9 @@
 				"HostedZoneId" : { "Ref" : "PublicHostedZone" },
 				"Name" : { "Fn::Join" : [ "", [ "data.", { "Ref" : "CDOMAIN" } ] ] }, 
 				"AliasTarget" : {
-					"HostedZoneId" : { "Fn::If" : [ "corezkRoleCreation",
-						{ "Fn::GetAtt" : [ "DataElasticLoadBalancer", "CanonicalHostedZoneNameID" ] },
-						{ "Fn::GetAtt" : [ "WebElasticLoadBalancer", "CanonicalHostedZoneNameID" ] }
-					] }, 
-					"DNSName" : { "Fn::If" : [ "corezkRoleCreation",
-						{ "Fn::GetAtt" : [ "DataElasticLoadBalancer", "DNSName" ] },
-						{ "Fn::GetAtt" : [ "WebElasticLoadBalancer", "DNSName" ] }
-					] } 
+					"HostedZoneId" : 
+						{ "Fn::GetAtt" : [ "DataElasticLoadBalancer", "CanonicalHostedZoneNameID" ] },					
+					"DNSName" : { "Fn::GetAtt" : [ "DataElasticLoadBalancer", "DNSName" ] }						
 				},
 				"Type" : "A"
 			}
@@ -875,7 +891,6 @@
 		},
 		"DataElasticLoadBalancer" : {
 			"Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
-			"Condition" : "corezkRoleCreation",
 			"Properties" : {
 				"CrossZone" : "true",
 				"SecurityGroups" : [ { "Ref" : "WebLoadBalancerSecurityGroup" } ], 
@@ -958,331 +973,14 @@
 			}
 		},
 		
-
-		"masterGroup" : {
-			"Type" : "AWS::AutoScaling::AutoScalingGroup",
-			"DependsOn" : "AttachGateway",
-			"Condition" : "masterRoleCreation",
-			"Properties" : {
-				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
-				"LaunchConfigurationName" : { "Ref" : "masterLaunch" },
-				"LoadBalancerNames" : [ { "Ref" : "WebElasticLoadBalancer" } ],
-				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "master" ] },
-				"MaxSize" : "10",
-				"Tags" : [ {
-					"Key" : "Role",
-					"Value" : "master",
-					"PropagateAtLaunch" : "true"
-				},{
-					"Key" : "Cluster",
-					"Value" : { "Ref" : "AWS::StackName" },
-					"PropagateAtLaunch" : "true"
-				},{
-					"Key" : "Name", 
-					"Value" : { "Fn::Join" : [ "", [
-						{ "Ref" : "AWS::StackName" }, " - master" ] ] },
-					"PropagateAtLaunch" : "true"
-				} ]
-			},
-			"CreationPolicy" : {
-				"ResourceSignal" : {
-					"Count" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "master" ] }, 
-					"Timeout" : "PT200M"
-				}
-			},
-			"UpdatePolicy": {
-				"AutoScalingRollingUpdate": {
-					"MinInstancesInService": "1",
-					"MaxBatchSize": "1",
-					"PauseTime" : "PT40M",
-					"WaitOnResourceSignals": "true"
-				}
-			}
-		},
-		"masterLaunch" : {
-			"Type" : "AWS::AutoScaling::LaunchConfiguration",
-			"Condition" : "masterRoleCreation",
-			"Properties" : {
-				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Ref" : "AMI" }, 
-				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
-				"KeyName"        : { "Ref" : "KeyName" },
-				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "master", { "Ref" : "InstanceSize" } ] },
-				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
-				"InstanceMonitoring" : "true", 
-				"BlockDeviceMappings" : [ {
-					"DeviceName" : "/dev/sda1",
-					"Ebs" : {
-						"VolumeSize" : "500",
-						"VolumeType" : "gp2",
-						"DeleteOnTermination" : "true"
-					}
-				},  {
-					"DeviceName" : "/dev/sdb",
-						"VirtualName" : "ephemeral0"
-				},  {
-					"DeviceName" : "/dev/sdc",
-						"VirtualName" : "ephemeral1"
-				} ],
-				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
-					"#!/bin/bash\n",
-					"NODEROLE=master\n",
-					"MODULES=\"flow:true location:true ips:true monitor:true malware:false social:true\"\n",
-					"#NODESERVICES=\n",
-					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
-					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
-					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
-					"REGION=", { "Ref" : "AWS::Region" }, "\n",
-					"VPCID=", { "Ref" : "VPC" }, "\n",
-					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
-					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
-					"AUTOSCALINGGROUPNAME=masterGroup\n",
-					"LOGWATCHG=", { "Ref" : "AWS::StackName" }, "\n",
-					"SQSQUEUEURL=", { "Ref" : "SQSQueue" }, "\n",
-					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
-					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
-					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
-					"S3TYPE=aws\n",
-					"CLOUDDNS=1\n",
-					"LBINTERNAL=0\n",
-					{ "Fn::If" : [ "masterNameCreation", "ROUTE53NAMES=master\n", "" ] },
-					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
-					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"CHEF_AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKeyChef" }, "\"\n",
-					"CHEF_AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKeyChef", "SecretAccessKey" ] }, "\"\n",
-					{ "Fn::If" : [ "ElasticacheCreation", { "Fn::Join" : [ "", [ 
-						"ELASTICCACHECLUSTERID=", { "Ref" : "Memcached" }, "\n",
-						"ELASTICCACHEENDPOINT=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Address" ] },
-						":", { "Fn::GetAtt" : [ "Memcached", "ConfigurationEndpoint.Port" ] } ] ] }, "\n"
-						] ] },
-					"" ] },
-					{ "Fn::If" : [ "RDSCreation", { "Fn::Join" : [ "", [ 
-						"SQLUSER=rdsredborder\n",
-						"SQLPASSWORD=", { "Ref" : "DBPassword" }, "\n",
-						"SQLDB=redborderRDS\n", 
-						"SQLHOST=", { "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "DBRDS", "Endpoint.Address" ] }, ":", 
-							{ "Fn::GetAtt" : [ "DBRDS", "Endpoint.Port" ] } ] ] }, "\n"
-						] ] }, 
-					"" ] },
-					"ENRICHMODE=samza\n",
-					"\n\n",
-					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
-					"{\n",
-					"  \"redBorder\" : {\n",
-					"    \"aws\" : {\n",
-					"      \"cloudwatch\" : \"true\"\n",
-					"    }\n",
-					"  }\n",
-					"}\n",
-					"_RBEOF2_\n",
-					". /opt/rb/bin/rb_set_aws_interface.sh",
-					"\n"
-				] ] } }
-			}
-		},
-		
-		"customGroup" : {
-			"Type" : "AWS::AutoScaling::AutoScalingGroup",
-			"Condition" : "customRoleCreation",
-			"DependsOn" : "masterGroup",
-			"Properties" : {
-				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
-				"LaunchConfigurationName" : { "Ref" : "customLaunch" },
-				"LoadBalancerNames" : [ { "Ref" : "WebElasticLoadBalancer" } ],
-				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "custom" ] },
-				"MaxSize" : "10",
-				"Tags" : [ {
-					"Key" : "Role",
-					"Value" : "custom",
-					"PropagateAtLaunch" : "true"
-				},{
-					"Key" : "Cluster",
-					"Value" : { "Ref" : "AWS::StackName" },
-					"PropagateAtLaunch" : "true"
-				},{
-					"Key" : "Name", 
-					"Value" : { "Fn::Join" : [ "", [
-						{ "Ref" : "AWS::StackName" }, " - custom" ] ] },
-					"PropagateAtLaunch" : "true"
-				} ]
-			},
-			"CreationPolicy" : {
-				"ResourceSignal" : {
-					"Count" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "custom" ] }, 
-					"Timeout" : "PT200M"
-				}
-			},
-			"UpdatePolicy": {
-				"AutoScalingRollingUpdate": {
-					"MinInstancesInService": "1",
-					"MaxBatchSize": "1",
-					"PauseTime" : "PT40M",
-					"WaitOnResourceSignals": "true"
-				}
-			}
-		},
-		"customLaunch" : {
-			"Type" : "AWS::AutoScaling::LaunchConfiguration",
-			"Condition" : "customRoleCreation",
-			"Properties" : {
-				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] }, 
-				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
-				"ImageId" : { "Ref" : "AMI" },
-				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "custom", { "Ref" : "InstanceSize" } ] },
-				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
-				"InstanceMonitoring" : "true", 
-				"BlockDeviceMappings" : [ {
-					"DeviceName" : "/dev/sda1",
-					"Ebs" : {
-						"VolumeSize" : "500",
-						"VolumeType" : "gp2",
-						"DeleteOnTermination" : "true"
-					}
-				},  {
-					"DeviceName" : "/dev/sdb",
-						"VirtualName" : "ephemeral0"
-				},  {
-					"DeviceName" : "/dev/sdc",
-						"VirtualName" : "ephemeral1"
-				} ],
-				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
-					"#!/bin/bash\n",
-					"NODEROLE=custom\n",
-					"#NODESERVICES=\n",
-					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
-					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
-					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
-					"REGION=", { "Ref" : "AWS::Region" }, "\n",
-					"VPCID=", { "Ref" : "VPC" }, "\n",
-					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
-					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
-					"AUTOSCALINGGROUPNAME=customGroup\n",
-					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
-					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
-					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
-					"S3TYPE=aws\n",
-					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
-					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"\n\n",
-					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
-					"{\n",
-					"  \"redBorder\" : {\n",
-					"    \"aws\" : {\n",
-					"      \"cloudwatch\" : \"true\"\n",
-					"    }\n",
-					"  }\n",
-					"}\n",
-					"_RBEOF2_\n",
-					". /opt/rb/bin/rb_set_aws_interface.sh",
-					"\n"
-				] ] } }
-			}
-		},
-		"webdruidGroup" : {
-			"Type" : "AWS::AutoScaling::AutoScalingGroup",
-			"Condition" : "masterRoleCreation",
-			"Properties" : {
-				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
-				"LaunchConfigurationName" : { "Ref" : "webdruidLaunch" },
-				"LoadBalancerNames" : [ { "Ref" : "WebElasticLoadBalancer" } ],
-				"MinSize" : "0",
-				"MaxSize" : "10",
-				"Tags" : [ {
-					"Key" : "Role",
-					"Value" : "webdruid",
-					"PropagateAtLaunch" : "true"
-				},{
-					"Key" : "Cluster",
-					"Value" : { "Ref" : "AWS::StackName" },
-					"PropagateAtLaunch" : "true"
-				},{
-					"Key" : "Name", 
-					"Value" : { "Fn::Join" : [ "", [
-						{ "Ref" : "AWS::StackName" }, " - webdruid" ] ] },
-					"PropagateAtLaunch" : "true"
-				} ]
-			}
-		},
-		"webdruidLaunch" : {
-			"Type" : "AWS::AutoScaling::LaunchConfiguration",
-			"Condition" : "masterRoleCreation",
-			"Properties" : {
-				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Ref" : "AMI" }, 
-				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
-				"KeyName"        : { "Ref" : "KeyName" },
-				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "custom", { "Ref" : "InstanceSize" } ] },
-				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
-				"InstanceMonitoring" : "true", 
-				"BlockDeviceMappings" : [ {
-					"DeviceName" : "/dev/sda1",
-					"Ebs" : {
-						"VolumeSize" : "500",
-						"VolumeType" : "gp2",
-						"DeleteOnTermination" : "true"
-					}
-				},  {
-					"DeviceName" : "/dev/sdb",
-						"VirtualName" : "ephemeral0"
-				},  {
-					"DeviceName" : "/dev/sdc",
-						"VirtualName" : "ephemeral1"
-				} ],
-				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
-					"#!/bin/bash\n",
-					"NODEROLE=webdruid\n",
-					"#NODESERVICES=\n",
-					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
-					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
-					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
-					"REGION=", { "Ref" : "AWS::Region" }, "\n",
-					"VPCID=", { "Ref" : "VPC" }, "\n",
-					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
-					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
-					"AUTOSCALINGGROUPNAME=webdruidGroup\n",
-					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
-					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
-					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
-					"S3TYPE=aws\n",
-					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
-					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"\n\n",
-					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
-					"{\n",
-					"  \"redBorder\" : {\n",
-					"    \"aws\" : {\n",
-					"      \"autoscaled\" : \"true\",\n",
-					"      \"cloudwatch\" : \"true\"\n",
-					"    }\n",
-					"  }\n",
-					"}\n",
-					"_RBEOF2_\n",
-					". /opt/rb/bin/rb_set_aws_interface.sh",
-					"\n"
-				] ] } }
-			}
-		},
-		"webdruidLifecycleHook" : {
-			"Type" : "AWS::AutoScaling::LifecycleHook",
-			"Condition" : "masterRoleCreation",
-			"Properties" : {
-				"AutoScalingGroupName" : { "Ref" : "webdruidGroup"  },
-				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
-				"NotificationTargetARN" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] }, 
-				"RoleARN" : { "Fn::GetAtt" : [ "IAMRoleLifecycleHook", "Arn" ] }
-			}
-		},
-		
 		"corezkGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
-			"Condition" : "corezkRoleCreation",
 			"DependsOn" : "AttachGateway",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "corezkLaunch" },
 				"LoadBalancerNames" : { "Fn::If" : [ "InternalLoadBalancerCreation", [ { "Ref" : "CoreElasticLoadBalancer" } ], { "Ref" : "AWS::NoValue" } ] },
-				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "corezk" ] },
+				"MinSize" : { "Ref" : "MinCorezkInstances" },
 				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
@@ -1307,7 +1005,7 @@
 			},
 			"CreationPolicy" : {
 				"ResourceSignal" : {
-					"Count" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "corezk" ] }, 
+					"Count" : { "Ref" : "MinCorezkInstances" },
 					"Timeout" : "PT200M"
 				}
 			},
@@ -1322,7 +1020,6 @@
 		},
 		"corezkLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
-			"Condition" : "corezkRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
@@ -1406,13 +1103,12 @@
 
 		"kafkaGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
-			"Condition" : "kafkaRoleCreation",
 			"DependsOn" : "corezkGroup",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "kafkaLaunch" },
 				"LoadBalancerNames" : { "Fn::If" : [ "InternalLoadBalancerCreation", [ { "Ref" : "KafkaElasticLoadBalancer" } ], { "Ref" : "AWS::NoValue" } ] },
-				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "kafka" ] },
+				"MinSize" : { "Ref" : "MinKafkaInstances" },
 				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
@@ -1436,7 +1132,7 @@
 			},
 			"CreationPolicy" : {
 				"ResourceSignal" : {
-					"Count" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "kafka" ] }, 
+					"Count" : { "Ref" : "MinKafkaInstances" }, 
 					"Timeout" : "PT200M"
 				}
 			},
@@ -1451,7 +1147,6 @@
 		},
 		"kafkaLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
-			"Condition" : "kafkaRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
@@ -1511,12 +1206,11 @@
 		"http2kGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
 			"DependsOn" : "kafkaGroup",
-			"Condition" : "http2kRoleCreation",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LoadBalancerNames" : [ { "Ref" : "DataElasticLoadBalancer" } ],
 				"LaunchConfigurationName" : { "Ref" : "http2kLaunch" },
-				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "http2k" ] },
+				"MinSize" : { "Ref" : "MinHttp2kInstances" },
 				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
@@ -1543,7 +1237,7 @@
 			},
 			"CreationPolicy" : {
 				"ResourceSignal" : {
-					"Count" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "http2k" ] }, 
+					"Count" : { "Ref" : "MinHttp2kInstances" },
 					"Timeout" : "PT200M"
 				}
 			},
@@ -1558,7 +1252,6 @@
 		},
 		"http2kLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
-			"Condition" : "http2kRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
@@ -1616,7 +1309,6 @@
 		},
 		"http2kLifecycleHook" : {
 			"Type" : "AWS::AutoScaling::LifecycleHook",
-			"Condition" : "http2kRoleCreation",
 			"Properties" : {
 				"AutoScalingGroupName" : { "Ref" : "http2kGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
@@ -1626,7 +1318,6 @@
 		},
 		"http2kHighCPUAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
-			"Condition" : "http2kRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - http2kHighCPUAlarm" ] ] },
 				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so high, triggers a scaling out",
@@ -1647,7 +1338,6 @@
 		},
 		"http2kScaleUpPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
-			"Condition" : "http2kRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "http2kGroup" },
@@ -1657,7 +1347,6 @@
 		},
 		"http2kLowCPUAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
-			"Condition" : "http2kRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - http2kLowCPUAlarm" ] ] },
 				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so low, triggers a scaling in",
@@ -1678,7 +1367,6 @@
 		},
 		"http2kScaleDownPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
-			"Condition" : "http2kRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "http2kGroup" },
@@ -1688,13 +1376,12 @@
 		},
 		"webGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
-			"Condition" : "webRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "webLaunch" },
 				"LoadBalancerNames" : [ { "Ref" : "WebElasticLoadBalancer" } ],
-				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "web" ] },
+				"MinSize" : { "Ref" : "MinWebInstances" },
 				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
@@ -1720,7 +1407,7 @@
 			},
 			"CreationPolicy" : {
 				"ResourceSignal" : {
-					"Count" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "web" ] }, 
+					"Count" : { "Ref" : "MinWebInstances" },
 					"Timeout" : "PT200M"
 				}
 			},
@@ -1735,7 +1422,6 @@
 		},
 		"webLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
-			"Condition" : "webRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
@@ -1794,7 +1480,6 @@
 		},
 		"webLifecycleHook" : {
 			"Type" : "AWS::AutoScaling::LifecycleHook",
-			"Condition" : "webRoleCreation",
 			"Properties" : {
 				"AutoScalingGroupName" : { "Ref" : "webGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
@@ -1804,7 +1489,6 @@
 		},
 		"webHighCPUAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
-			"Condition" : "webRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - webHighCPUAlarm" ] ] },
 				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so high, triggers a scaling out",
@@ -1825,7 +1509,6 @@
 		},
 		"webScaleUpPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
-			"Condition" : "webRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "webGroup" },
@@ -1835,7 +1518,6 @@
 		},
 		"webLowCPUAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
-			"Condition" : "webRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - webLowCPUAlarm" ] ] },
 				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so low, triggers a scaling in",
@@ -1856,7 +1538,6 @@
 		},
 		"webScaleDownPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
-			"Condition" : "webRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "webGroup" },
@@ -1867,12 +1548,11 @@
 
 		"brokerGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
-			"Condition" : "brokerRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "brokerLaunch" },
-				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "broker" ] },
+				"MinSize" : { "Ref" : "MinBrokerInstances" },
 				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
@@ -1898,7 +1578,7 @@
 			},
 			"CreationPolicy" : {
 				"ResourceSignal" : {
-					"Count" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "broker" ] }, 
+					"Count" : { "Ref" : "MinBrokerInstances" }, 
 					"Timeout" : "PT200M"
 				}
 			},
@@ -1913,7 +1593,6 @@
 		},
 		"brokerLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
-			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
@@ -1972,7 +1651,6 @@
 		},
 		"brokerLifecycleHook" : {
 			"Type" : "AWS::AutoScaling::LifecycleHook",
-			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AutoScalingGroupName" : { "Ref" : "brokerGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
@@ -1982,7 +1660,6 @@
 		},
 		"brokerHighCPUAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
-			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - brokerHighCPUAlarm" ] ] },
 				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so high, triggers a scaling out",
@@ -2003,7 +1680,6 @@
 		},		
 		"brokerLowCPUAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
-			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - brokerLowCPUAlarm" ] ] },
 				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so low, triggers a scaling in",
@@ -2024,7 +1700,6 @@
 		},
 		"brokerHighRAMAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
-			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - brokerHighRAMAlarm" ] ] },
 				"AlarmDescription" : "Alarm for web autoscaling. When RAM is so high, triggers a scaling out",
@@ -2045,7 +1720,6 @@
 		},		
 		"brokerLowRAMAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
-			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - brokerLowRAMAlarm" ] ] },
 				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so low, triggers a scaling in",
@@ -2066,7 +1740,6 @@
 		},
 		"brokerScaleUpPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
-			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "brokerGroup" },
@@ -2076,7 +1749,6 @@
 		},
 		"brokerScaleDownPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
-			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "brokerGroup" },
@@ -2088,11 +1760,10 @@
 		"middlemanagerGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
 			"DependsOn" : "kafkaGroup",
-			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "middlemanagerLaunch" },
-				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "middlemanager" ] },
+				"MinSize" : { "Ref" : "MinMiddlemanagerInstances" },
 				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
@@ -2118,7 +1789,7 @@
 			},
 			"CreationPolicy" : {
 				"ResourceSignal" : {
-					"Count" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "middlemanager" ] }, 
+					"Count" : { "Ref" : "MinMiddlemanagerInstances" },
 					"Timeout" : "PT200M"
 				}
 			},
@@ -2133,7 +1804,6 @@
 		},
 		"middlemanagerLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
-			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
@@ -2192,7 +1862,6 @@
 		},
 		"middleManagerLifecycleHook" : {
 			"Type" : "AWS::AutoScaling::LifecycleHook",
-			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"AutoScalingGroupName" : { "Ref" : "middlemanagerGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
@@ -2202,7 +1871,6 @@
 		},
 		"middlemanagerHighCapacityAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
-			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - middlemanagerHighCapacityAlarm" ] ] },
 				"AlarmDescription" : "Alarm for middleManager autoscaling. When capacity is so high, triggers a scaling out",
@@ -2223,7 +1891,6 @@
 		},
 		"middlemanagerPendingTasksAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
-			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - middlemanagerPendingTasksAlarm" ] ] },
 				"AlarmDescription" : "Alarm for middleManager autoscaling. When capacity is so high, triggers a scaling out",
@@ -2244,7 +1911,6 @@
 		},
 		"middleManagerScaleUpPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
-			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "middlemanagerGroup" },
@@ -2254,7 +1920,6 @@
 		}, 
 		"middlemanagerLowCapacityAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
-			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - middlemanagerLowCapacityAlarm" ] ] },
 				"AlarmDescription" : "Alarm for middleManager autoscaling. When capacity is so low, triggers a scaling in",
@@ -2275,12 +1940,11 @@
 
 		"historicalGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
-			"Condition" : "historicalRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "historicalLaunch" },
-				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "historical" ] },
+				"MinSize" : { "Ref" : "MinHistoricalInstances" },
 				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
@@ -2306,7 +1970,7 @@
 			},
 			"CreationPolicy" : {
 				"ResourceSignal" : {
-					"Count" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "historical" ] }, 
+					"Count" : { "Ref" : "MinHistoricalInstances" },
 					"Timeout" : "PT200M"
 				}
 			},
@@ -2321,7 +1985,6 @@
 		},
 		"historicalLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
-			"Condition" : "historicalRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
@@ -2380,7 +2043,6 @@
 		},
 		"historicalLifecycleHook" : {
 			"Type" : "AWS::AutoScaling::LifecycleHook",
-			"Condition" : "historicalRoleCreation",
 			"Properties" : {
 				"AutoScalingGroupName" : { "Ref" : "historicalGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
@@ -2390,7 +2052,6 @@
 		},
 		"historicalHighCapacityAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
-			"Condition" : "historicalRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalHighCapacityAlarm" ] ] },
 				"AlarmDescription" : "Alarm for historical hot autoscaling. When capacity is so high, triggers a scaling out",
@@ -2411,7 +2072,6 @@
 		},
 		"historicalLowCapacityAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
-			"Condition" : "historicalRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalLowCapacityAlarm" ] ] },
 				"AlarmDescription" : "Alarm for historical hot  autoscaling. When disk usage is so low, triggers a scaling in",
@@ -2432,7 +2092,6 @@
 		},
 		"historicalScaleUpPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
-			"Condition" : "historicalRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "historicalGroup" },
@@ -2442,7 +2101,6 @@
 		}, 
 		"historicalScaleDownPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
-			"Condition" : "historicalRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "historicalGroup" },
@@ -2453,12 +2111,11 @@
 
 		"historicalhotGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
-			"Condition" : "historicalhotRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "historicalhotLaunch" },
-				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "historicalhot" ] },
+				"MinSize" : { "Ref" : "MinHistoricalhotInstances" },
 				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
@@ -2484,7 +2141,7 @@
 			},
 			"CreationPolicy" : {
 				"ResourceSignal" : {
-					"Count" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "historicalhot" ] }, 
+					"Count" : { "Ref" : "MinHistoricalhotInstances" }, 
 					"Timeout" : "PT200M"
 				}
 			},
@@ -2499,7 +2156,6 @@
 		},
 		"historicalhotLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
-			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
@@ -2551,6 +2207,7 @@
 					"    \"druid\" : {\n",
 					"      \"historical\" : {\n",
 					"        \"tier\" : \"hot\"\n",
+					"        \"memory_only\" : \"1\"\n",
 					"     }\n",
 					"    }\n",
 					"  }\n",
@@ -2563,7 +2220,6 @@
 		},
 		"historicalhotHighCapacityAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
-			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalHotHighCapacityAlarm" ] ] },
 				"AlarmDescription" : "Alarm for historical hot autoscaling. When capacity is so high, triggers a scaling out",
@@ -2584,7 +2240,6 @@
 		},
 		"historicalhotLowCapacityAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
-			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalHotLowRAMAlarm" ] ] },
 				"AlarmDescription" : "Alarm for historical hot  autoscaling. When RAM is so low, triggers a scaling in",
@@ -2605,7 +2260,6 @@
 		},
 		"historicalhotScaleUpPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
-			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "historicalhotGroup" },
@@ -2615,7 +2269,6 @@
 		}, 
 		"historicalhotScaleDownPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
-			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "historicalhotGroup" },
@@ -2624,14 +2277,122 @@
 			}
 		}, 
 
+		"historicalGenericGroup" : {
+			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"DependsOn" : "kafkaGroup",
+			"Properties" : {
+				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
+				"LaunchConfigurationName" : { "Ref" : "historicalGenericLaunch" },
+				"MinSize" : { "Ref" : "HistoricalGenericInstances" },
+				"MaxSize" : "10",
+				"NotificationConfiguration" : {
+					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
+          			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
+                        					"autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE",
+                                  			"autoscaling:EC2_INSTANCE_TERMINATE_ERROR" ]        			
+      			},
+				"Tags" : [ {
+					"Key" : "Role",
+					"Value" : "historicalGeneric",
+					"PropagateAtLaunch" : "true"
+				},{
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" },
+					"PropagateAtLaunch" : "true"
+				},{
+					"Key" : "Name", 
+					"Value" : { "Fn::Join" : [ "", [
+						{ "Ref" : "AWS::StackName" }, " - historicalGeneric" ] ] },
+					"PropagateAtLaunch" : "true"
+				} ]
+			},
+			"CreationPolicy" : {
+				"ResourceSignal" : {
+					"Count" : { "Ref" : "HistoricalGenericInstances" }, 
+					"Timeout" : "PT200M"
+				}
+			},
+			"UpdatePolicy": {
+				"AutoScalingRollingUpdate": {
+					"MinInstancesInService": "1",
+					"MaxBatchSize": "1",
+					"PauseTime" : "PT40M",
+					"WaitOnResourceSignals": "true"
+				}
+			}
+		},
+		"historicalGenericLaunch" : {
+			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Properties" : {
+				"AssociatePublicIpAddress" : "true",
+				"ImageId" : { "Ref" : "AMI" },
+				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
+				"KeyName"        : { "Ref" : "KeyName" },
+				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "historicalGeneric", { "Ref" : "InstanceSize" } ] },
+				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
+				"InstanceMonitoring" : "true", 
+				"BlockDeviceMappings" : [ {
+					"DeviceName" : "/dev/sda1",
+					"Ebs" : {
+						"VolumeSize" : "500",
+						"VolumeType" : "gp2",
+						"DeleteOnTermination" : "true"
+					}
+				},  {
+					"DeviceName" : "/dev/sdb",
+						"VirtualName" : "ephemeral0"
+				},  {
+					"DeviceName" : "/dev/sdc",
+						"VirtualName" : "ephemeral1"
+				} ],
+				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+					"#!/bin/bash\n",
+					"NODEROLE=historical\n",
+					"#NODESERVICES=\n",
+					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
+					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
+					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
+					"REGION=", { "Ref" : "AWS::Region" }, "\n",
+					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
+					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
+					"AUTOSCALINGGROUPNAME=historicalGenericGroup\n",
+					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
+					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
+					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
+					"S3TYPE=aws\n",
+					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
+					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
+					"\n\n",
+					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
+					"{\n",
+					"  \"redBorder\" : {\n",
+					"    \"aws\" : {\n",
+					"      \"cloudwatch\" : \"true\",\n",
+					"      \"autoscaled\" : \"true\"\n",
+					"     },\n",
+					"    \"druid\" : {\n",
+					"      \"historical\" : {\n",
+					"        \"tier\" : \"generic\"\n",
+					"     }\n",
+					"    }\n",
+					"  }\n",
+					"}\n",
+					"_RBEOF2_\n",
+					". /opt/rb/bin/rb_set_aws_interface.sh",
+					"\n"
+				] ] } }
+			}
+		},
+
 		"samzaGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
-			"Condition" : "samzaRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "samzaLaunch" },
-				"MinSize" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "samza" ] },
+				"MinSize" : { "Ref" : "MinSamzaInstances" },
 				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
@@ -2657,7 +2418,7 @@
 			},
 			"CreationPolicy" : {
 				"ResourceSignal" : {
-					"Count" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "samza" ] }, 
+					"Count" : { "Ref" : "MinSamzaInstances" }, 
 					"Timeout" : "PT200M"
 				}
 			},
@@ -2672,7 +2433,6 @@
 		},
 		"samzaLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
-			"Condition" : "samzaRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
