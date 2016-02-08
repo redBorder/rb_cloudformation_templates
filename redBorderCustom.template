@@ -1008,14 +1008,6 @@
 					"Count" : { "Ref" : "MinCorezkInstances" },
 					"Timeout" : "PT200M"
 				}
-			},
-			"UpdatePolicy": {
-				"AutoScalingRollingUpdate": {
-					"MinInstancesInService": "1",
-					"MaxBatchSize": "1",
-					"PauseTime" : "PT40M",
-					"WaitOnResourceSignals": "true"
-				}
 			}
 		},
 		"corezkLaunch" : {
@@ -1135,14 +1127,6 @@
 					"Count" : { "Ref" : "MinKafkaInstances" }, 
 					"Timeout" : "PT200M"
 				}
-			},
-			"UpdatePolicy": {
-				"AutoScalingRollingUpdate": {
-					"MinInstancesInService": "1",
-					"MaxBatchSize": "1",
-					"PauseTime" : "PT40M",
-					"WaitOnResourceSignals": "true"
-				}
 			}
 		},
 		"kafkaLaunch" : {
@@ -1239,14 +1223,6 @@
 				"ResourceSignal" : {
 					"Count" : { "Ref" : "MinHttp2kInstances" },
 					"Timeout" : "PT200M"
-				}
-			},
-			"UpdatePolicy": {
-				"AutoScalingRollingUpdate": {
-					"MinInstancesInService": "1",
-					"MaxBatchSize": "1",
-					"PauseTime" : "PT40M",
-					"WaitOnResourceSignals": "true"
 				}
 			}
 		},
@@ -1410,14 +1386,6 @@
 					"Count" : { "Ref" : "MinWebInstances" },
 					"Timeout" : "PT200M"
 				}
-			},
-			"UpdatePolicy": {
-				"AutoScalingRollingUpdate": {
-					"MinInstancesInService": "1",
-					"MaxBatchSize": "1",
-					"PauseTime" : "PT40M",
-					"WaitOnResourceSignals": "true"
-				}
 			}
 		},
 		"webLaunch" : {
@@ -1580,14 +1548,6 @@
 				"ResourceSignal" : {
 					"Count" : { "Ref" : "MinBrokerInstances" }, 
 					"Timeout" : "PT200M"
-				}
-			},
-			"UpdatePolicy": {
-				"AutoScalingRollingUpdate": {
-					"MinInstancesInService": "1",
-					"MaxBatchSize": "1",
-					"PauseTime" : "PT40M",
-					"WaitOnResourceSignals": "true"
 				}
 			}
 		},
@@ -1792,14 +1752,6 @@
 					"Count" : { "Ref" : "MinMiddlemanagerInstances" },
 					"Timeout" : "PT200M"
 				}
-			},
-			"UpdatePolicy": {
-				"AutoScalingRollingUpdate": {
-					"MinInstancesInService": "1",
-					"MaxBatchSize": "1",
-					"PauseTime" : "PT40M",
-					"WaitOnResourceSignals": "true"
-				}
 			}
 		},
 		"middlemanagerLaunch" : {
@@ -1973,14 +1925,6 @@
 					"Count" : { "Ref" : "MinHistoricalInstances" },
 					"Timeout" : "PT200M"
 				}
-			},
-			"UpdatePolicy": {
-				"AutoScalingRollingUpdate": {
-					"MinInstancesInService": "1",
-					"MaxBatchSize": "1",
-					"PauseTime" : "PT40M",
-					"WaitOnResourceSignals": "true"
-				}
 			}
 		},
 		"historicalLaunch" : {
@@ -2144,14 +2088,6 @@
 					"Count" : { "Ref" : "MinHistoricalhotInstances" }, 
 					"Timeout" : "PT200M"
 				}
-			},
-			"UpdatePolicy": {
-				"AutoScalingRollingUpdate": {
-					"MinInstancesInService": "1",
-					"MaxBatchSize": "1",
-					"PauseTime" : "PT40M",
-					"WaitOnResourceSignals": "true"
-				}
 			}
 		},
 		"historicalhotLaunch" : {
@@ -2312,14 +2248,6 @@
 					"Count" : { "Ref" : "HistoricalGenericInstances" }, 
 					"Timeout" : "PT200M"
 				}
-			},
-			"UpdatePolicy": {
-				"AutoScalingRollingUpdate": {
-					"MinInstancesInService": "1",
-					"MaxBatchSize": "1",
-					"PauseTime" : "PT40M",
-					"WaitOnResourceSignals": "true"
-				}
 			}
 		},
 		"historicalGenericLaunch" : {
@@ -2420,14 +2348,6 @@
 				"ResourceSignal" : {
 					"Count" : { "Ref" : "MinSamzaInstances" }, 
 					"Timeout" : "PT200M"
-				}
-			},
-			"UpdatePolicy": {
-				"AutoScalingRollingUpdate": {
-					"MinInstancesInService": "1",
-					"MaxBatchSize": "1",
-					"PauseTime" : "PT40M",
-					"WaitOnResourceSignals": "true"
 				}
 			}
 		},
