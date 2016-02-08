@@ -2414,7 +2414,7 @@
 			"Type" : "AWS::CloudWatch::Alarm",
 			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
-				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalHotLowRAMAlarm" ] ] },
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalHotLowCapacityAlarm" ] ] },
 				"AlarmDescription" : "Alarm for historical hot  autoscaling. When RAM is so low, triggers a scaling in",
 				"Namespace" : { "Fn::Join" : [ "", [ "rB/", { "Ref" : "AWS::StackName" } ] ] },
 				"MetricName" : "hot_tier_capacity",
