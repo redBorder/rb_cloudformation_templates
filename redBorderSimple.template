@@ -776,7 +776,7 @@
 						":server-certificate/", { "Ref" : "WebSSLCertificateName" } ] ] }
 				} ],
 				"HealthCheck" : {
-					"Target" : "HTTP:7979/users/login",
+					"Target" : "TCP:7979",
 					"HealthyThreshold" : "3",
 					"UnhealthyThreshold" : "5",
 					"Interval" : "30",
