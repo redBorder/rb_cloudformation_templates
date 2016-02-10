@@ -135,12 +135,6 @@
 			"AllowedValues" : [ "true", "false" ],
 			"Default" : "false"
 		},
-		"CreateMasterName" : {
-			"Description" : "Indicates if you want to assign a master.cdomain name to master instance",
-			"Type" : "String",
-			"AllowedValues" : [ "true", "false" ],
-			"Default" : "false"
-		},
 		"CreateInternalLoadBalancers" : {
 			"Description" : "Indicates if you want internal load balancers (only for cisco environments)",
 			"Type" : "String",
@@ -199,14 +193,14 @@
 		"ElasticacheCreation" : {
 			"Fn::Equals" : [ "true", { "Ref" : "UseElasticache" } ]
 		},
-		"masterNameCreation" : {
-			"Fn::Equals" : [ "true", { "Ref" : "CreateMasterName" } ]
-		},
 		"openVPNInstanceCreation" : {
 			"Fn::Equals" : [ "true", { "Ref" : "CreateOpenVPNInstance" } ]
 		},
 		"InternalLoadBalancerCreation" : {
 			"Fn::Equals" : [ "true", { "Ref" : "CreateInternalLoadBalancers" } ]
+		},
+		"regionNVirginia" : {
+			"Fn::Equals" : [ "us-east-1", { "Ref" : "AWS::Region" } ]
 		}
 	},
 	
@@ -1051,11 +1045,13 @@
 					"SQSQUEUEURL=", { "Ref" : "SQSQueue" }, "\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
 					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
-					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
+					{ "Fn::If" : [ "regionNVirginia",
+						"S3HOST=s3.amazonaws.com\n",
+						{ "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }
+					] },
 					"S3TYPE=aws\n",
 					"CLOUDDNS=1\n",
 					{ "Fn::If" : [ "InternalLoadBalancerCreation",  "LBINTERNAL=1\n", "LBINTERNAL=0\n" ] },
-					{ "Fn::If" : [ "masterNameCreation", "ROUTE53NAMES=master\n", "" ] },
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
 					"CHEF_AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKeyChef" }, "\"\n",
@@ -1167,7 +1163,10 @@
 					"AUTOSCALINGGROUPNAME=kafkaGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
 					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
-					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
+					{ "Fn::If" : [ "regionNVirginia",
+						"S3HOST=s3.amazonaws.com\n",
+						{ "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }
+					] },
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
@@ -1263,7 +1262,10 @@
 					"AUTOSCALINGGROUPNAME=http2kGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
 					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
-					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
+					{ "Fn::If" : [ "regionNVirginia",
+						"S3HOST=s3.amazonaws.com\n",
+						{ "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }
+					] },
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
@@ -1426,7 +1428,10 @@
 					"AUTOSCALINGGROUPNAME=webGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
 					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
-					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
+					{ "Fn::If" : [ "regionNVirginia",
+						"S3HOST=s3.amazonaws.com\n",
+						{ "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }
+					] },
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
@@ -1589,7 +1594,10 @@
 					"AUTOSCALINGGROUPNAME=brokerGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
 					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
-					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
+					{ "Fn::If" : [ "regionNVirginia",
+						"S3HOST=s3.amazonaws.com\n",
+						{ "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }
+					] },
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
@@ -1792,7 +1800,10 @@
 					"AUTOSCALINGGROUPNAME=middlemanagerGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
 					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
-					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
+					{ "Fn::If" : [ "regionNVirginia",
+						"S3HOST=s3.amazonaws.com\n",
+						{ "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }
+					] },
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
@@ -1965,7 +1976,10 @@
 					"AUTOSCALINGGROUPNAME=historicalGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
 					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
-					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
+					{ "Fn::If" : [ "regionNVirginia",
+						"S3HOST=s3.amazonaws.com\n",
+						{ "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }
+					] },
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
@@ -2128,7 +2142,10 @@
 					"AUTOSCALINGGROUPNAME=historicalhotGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
 					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
-					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
+					{ "Fn::If" : [ "regionNVirginia",
+						"S3HOST=s3.amazonaws.com\n",
+						{ "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }
+					] },
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
@@ -2288,7 +2305,10 @@
 					"AUTOSCALINGGROUPNAME=historicalGenericGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
 					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
-					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
+					{ "Fn::If" : [ "regionNVirginia",
+						"S3HOST=s3.amazonaws.com\n",
+						{ "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }
+					] },
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
@@ -2389,8 +2409,10 @@
 					"AUTOSCALINGGROUPNAME=samzaGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n", 
 					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
-					"S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n",
-					"S3TYPE=aws\n",
+					{ "Fn::If" : [ "regionNVirginia",
+						"S3HOST=s3.amazonaws.com\n",
+						{ "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }
+					] },
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
 					"\n\n",
