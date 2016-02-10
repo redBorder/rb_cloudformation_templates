@@ -1828,7 +1828,8 @@
 			"Properties" : {
 				"AutoScalingGroupName" : { "Ref" : "middlemanagerGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
-				"NotificationTargetARN" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] }, 
+				"NotificationTargetARN" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] },
+				"HeartbeatTimeout" : "7200",
 				"RoleARN" : { "Fn::GetAtt" : [ "IAMRoleLifecycleHook", "Arn" ] }
 			}
 		},
@@ -2004,7 +2005,8 @@
 			"Properties" : {
 				"AutoScalingGroupName" : { "Ref" : "historicalGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
-				"NotificationTargetARN" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] }, 
+				"NotificationTargetARN" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] },
+				"HeartbeatTimeout" : "7200",
 				"RoleARN" : { "Fn::GetAtt" : [ "IAMRoleLifecycleHook", "Arn" ] }
 			}
 		},
@@ -2169,6 +2171,16 @@
 					". /opt/rb/bin/rb_set_aws_interface.sh",
 					"\n"
 				] ] } }
+			}
+		},
+		"historicalhotLifecycleHook" : {
+			"Type" : "AWS::AutoScaling::LifecycleHook",
+			"Properties" : {
+				"AutoScalingGroupName" : { "Ref" : "historicalhotGroup"  },
+				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
+				"NotificationTargetARN" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] },
+				"HeartbeatTimeout" : "7200",
+				"RoleARN" : { "Fn::GetAtt" : [ "IAMRoleLifecycleHook", "Arn" ] }
 			}
 		},
 		"historicalhotHighCapacityAlarm" : {
