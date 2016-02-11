@@ -10,8 +10,7 @@
 		}, 
 		"AMIOpenVPN" : {
 			"Description" : "openvpn for redBorder AMI to deploy",
-			"Type" : "String",
-			"Default" : "ami-a51fa9d6"
+			"Type" : "String"
 		},
 		"NumberOfNodes" : {
 			"Description" : "number of nodes for redBorder cluster. Roles will be configured automatically",

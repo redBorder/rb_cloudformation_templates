@@ -10,8 +10,7 @@
 		}, 
 		"AMIOpenVPN" : {
 			"Description" : "openvpn for redBorder AMI to deploy",
-			"Type" : "String",
-			"Default" : "ami-bcd86fcf"
+			"Type" : "String"
 		},
 		"MinCorezkInstances" : {
 			"Description" : "minimun number of nodes for corezk role.",
