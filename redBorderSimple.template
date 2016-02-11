@@ -85,7 +85,7 @@
 			"custom" :        { "small":"m4.large",       "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
 			"corezk" :        { "small":"m4.large",       "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
 			"kafka" :         { "small":"m4.large",       "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
-			"http2k" :        { "small":"m4.large",       "medium":"c4.xlarge",      "large":"c4.2xlarge"        },
+			"http2k" :        { "small":"m4.large",       "medium":"c4.xlarge",       "large":"c4.2xlarge"       },
 			"web" :           { "small":"m4.large",       "medium":"c4.2xlarge",      "large":"c4.4xlarge"       },
 			"broker" :        { "small":"m4.large",       "medium":"c4.2xlarge",      "large":"c4.4xlarge"       },
 			"middlemanager" : { "small":"m4.large",       "medium":"r3.4xlarge",      "large":"r3.8xlarge"       },
@@ -128,6 +128,9 @@
 		},
 		"samzaRoleCreation" : {
 			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "samza" ] } ] } ]
+		},
+		"regionNVirginia" : {
+			"Fn::Equals" : [ "us-east-1", { "Ref" : "AWS::Region" } ]
 		}		
 	},
 	
@@ -2046,6 +2049,7 @@
 		},
 		"middleManagerLifecycleHook" : {
 			"Type" : "AWS::AutoScaling::LifecycleHook",
+			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"AutoScalingGroupName" : { "Ref" : "middlemanagerGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
@@ -2241,7 +2245,8 @@
 			"Properties" : {
 				"AutoScalingGroupName" : { "Ref" : "historicalGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
-				"NotificationTargetARN" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] }, 
+				"NotificationTargetARN" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] },
+				"HeartbeatTimeout" : "7200",
 				"RoleARN" : { "Fn::GetAtt" : [ "IAMRoleLifecycleHook", "Arn" ] }
 			}
 		},
@@ -2424,6 +2429,7 @@
 		},
 		"historicalhotLifecycleHook" : {
 			"Type" : "AWS::AutoScaling::LifecycleHook",
+			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
 				"AutoScalingGroupName" : { "Ref" : "historicalhotGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
