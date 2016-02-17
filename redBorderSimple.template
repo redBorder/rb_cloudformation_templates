@@ -2096,7 +2096,7 @@
 				"Threshold" : "1",
 				"Statistic" : "Average",
 				"ActionsEnabled" : "true",
-				"AlarmActions" : [ { "Ref" : "middleManagerScaleUpPolicy" } ]
+				"AlarmActions" : [ { "Ref" : "SNSNotificationTopic" } ]
 			}
 		},
 		"middleManagerScaleUpPolicy" : {
@@ -2106,7 +2106,7 @@
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "middlemanagerGroup" },
 				"Cooldown" : "900",
-				"ScalingAdjustment" : "2"
+				"ScalingAdjustment" : "1"
 			}
 		}, 
 		"middlemanagerLowCapacityAlarm" : {

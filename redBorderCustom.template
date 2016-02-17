@@ -1864,12 +1864,12 @@
 					"Value" : "overlord"
 				} ], 
 				"EvaluationPeriods" : "1",
-				"Period" : "60",
+				"Period" : "300",
 				"ComparisonOperator" : "GreaterThanOrEqualToThreshold",
 				"Threshold" : "1",
 				"Statistic" : "Average",
 				"ActionsEnabled" : "true",
-				"AlarmActions" : [ { "Ref" : "middleManagerScaleUpPolicy" } ]
+				"AlarmActions" : [ { "Ref" : "SNSNotificationTopic" } ]
 			}
 		},
 		"middleManagerScaleUpPolicy" : {
@@ -1878,7 +1878,7 @@
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "middlemanagerGroup" },
 				"Cooldown" : "900",
-				"ScalingAdjustment" : "2"
+				"ScalingAdjustment" : "1"
 			}
 		}, 
 		"middlemanagerLowCapacityAlarm" : {
