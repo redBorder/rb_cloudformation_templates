@@ -7,9 +7,9 @@
 		"AMI" : {
 			"Description" : "redBorder AMI ID to deploy", 
 			"Type" : "String"
-		}, 
+		},
 		"AMIOpenVPN" : {
-			"Description" : "openvpn for redBorder AMI to deploy",
+			"Description" : "openvpn for redBorder AMI to deploy. Keep empty to avoid openvpn usage",
 			"Type" : "String"
 		},
 		"NumberOfNodes" : {
@@ -50,7 +50,7 @@
 			"Type" : "String"
 		},
 		"openVPNAdminPasswd" : {
-			"Description" : "Password for administrator access to OpenVPN server (with user redborder)",
+			"Description" : "Password for administrator access to OpenVPN server (with user redborder). Only necessary if an openvpn ami is specified",
 			"Type" : "String",
 			"NoEcho" : "true",
 			"MinLength" : "0",
@@ -127,6 +127,9 @@
 		},
 		"samzaRoleCreation" : {
 			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "samza" ] } ] } ]
+		},
+		"openVpnCreation" : {
+			"Fn::Not" : [ { "Fn::Equals" : [ "", { "Ref" : "AMIOpenVPN" } ] } ]
 		},
 		"regionNVirginia" : {
 			"Fn::Equals" : [ "us-east-1", { "Ref" : "AWS::Region" } ]
@@ -439,9 +442,9 @@
 				"VpcId" : { "Ref" : "VPC" },
 				"SecurityGroupIngress" : [ {
 					"IpProtocol" : "tcp",
-					"FromPort" : "22",
-					"ToPort" : "22",
-					"CidrIp" : "172.16.1.0/24" 
+					"FromPort" : { "Fn::If" : [ "openVpnCreation", "22", "6666" ] },
+					"ToPort" : { "Fn::If" : [ "openVpnCreation", "22", "6666" ] },
+					"CidrIp" : { "Fn::If" : [ "openVpnCreation", "172.16.1.0/24", "0.0.0.0/0" ] }
 				}, {
 					"IpProtocol" : "tcp",
 					"FromPort" : "80",
@@ -502,21 +505,22 @@
 
 		"openVPNSecurityGroup" : {
 			"Type" : "AWS::EC2::SecurityGroup",
+			"Condition" : "openVpnCreation",
 			"Properties" : {
 				"GroupDescription" : "Enable ports for OpenVPN service Port 943 is for administrator web access",
 				"VpcId" : { "Ref" : "VPC" },
-				"SecurityGroupIngress" : [ { 
-					"IpProtocol" : "tcp", 
+				"SecurityGroupIngress" : [ {
+					"IpProtocol" : "tcp",
 					"FromPort" : "443",
 					"ToPort" : "443",
 					"CidrIp" : "0.0.0.0/0"
 				}, {
-					"IpProtocol" : "tcp", 
+					"IpProtocol" : "tcp",
 					"FromPort" : "943",
 					"ToPort" : "943",
 					"CidrIp" : "0.0.0.0/0"
 				}, {
-					"IpProtocol" : "udp", 
+					"IpProtocol" : "udp",
 					"FromPort" : "1194",
 					"ToPort" : "1194",
 					"CidrIp" : "0.0.0.0/0"
@@ -527,7 +531,7 @@
 				} ]
 			}
 		},
-		
+
 		"WebLoadBalancerSecurityGroup" : {
 			"Type" : "AWS::EC2::SecurityGroup",
 			"Properties" : {
@@ -679,22 +683,24 @@
 			}
 		},
 		"OpenVPNPublicName" : {
-			"Type" : "AWS::Route53::RecordSet",			
+			"Type" : "AWS::Route53::RecordSet",
+			"Condition" : "openVpnCreation",
 			"Properties" : {
 				"Type" : "A",
-				"HostedZoneId" : { "Ref" : "PublicHostedZone" }, 
-				"Name" : { "Fn::Join" : [ "", [ "openvpn.", { "Ref" : "CDOMAIN" } ] ] }, 
-				"ResourceRecords" : [ { "Fn::GetAtt" : [ "openVPNInstance", "PublicIp" ] } ], 
+				"HostedZoneId" : { "Ref" : "PublicHostedZone" },
+				"Name" : { "Fn::Join" : [ "", [ "openvpn.", { "Ref" : "CDOMAIN" } ] ] },
+				"ResourceRecords" : [ { "Fn::GetAtt" : [ "openVPNInstance", "PublicIp" ] } ],
 				"TTL" : "300"
 			}
 		},
 		"OpenVPNPrivateName" : {
-			"Type" : "AWS::Route53::RecordSet",			
+			"Type" : "AWS::Route53::RecordSet",
+			"Condition" : "openVpnCreation",
 			"Properties" : {
 				"Type" : "A",
-				"HostedZoneId" : { "Ref" : "PrivateHostedZone" }, 
-				"Name" : { "Fn::Join" : [ "", [ "openvpn.", { "Ref" : "CDOMAIN" } ] ] }, 
-				"ResourceRecords" : [ { "Fn::GetAtt" : [ "openVPNInstance", "PrivateIp" ] } ], 
+				"HostedZoneId" : { "Ref" : "PrivateHostedZone" },
+				"Name" : { "Fn::Join" : [ "", [ "openvpn.", { "Ref" : "CDOMAIN" } ] ] },
+				"ResourceRecords" : [ { "Fn::GetAtt" : [ "openVPNInstance", "PrivateIp" ] } ],
 				"TTL" : "300"
 			}
 		},
@@ -2608,6 +2614,7 @@
 		},
 		"openVPNInstance" : {
 			"Type" : "AWS::EC2::Instance",
+			"Condition" : "openVpnCreation",
 			"Properties" : {
 				"AvailabilityZone" : { "Fn::GetAtt" : [ "PublicSubnet", "AvailabilityZone" ] },
 				"ImageId" : { "Ref" : "AMIOpenVPN" },
@@ -2618,7 +2625,7 @@
 			      	"DeviceIndex": "0",
 			      	"GroupSet": [ { "Ref" : "openVPNSecurityGroup" } ],
 			      	"SubnetId": { "Ref" : "PublicSubnet" }
-			    } ],				
+			    } ],
 				"SourceDestCheck" : "false",
 				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
 					"public_hostname=", { "Fn::Join" : [ "", [ "openvpn.", { "Ref" : "CDOMAIN" } ] ] }, "\n",
@@ -2628,28 +2635,30 @@
 				] ] } },
 				"Tags" : [ {
 					"Key" : "Role",
-					"Value" : "openvpn"					
+					"Value" : "openvpn"
 				},{
 					"Key" : "Cluster",
-					"Value" : { "Ref" : "AWS::StackName" }					
+					"Value" : { "Ref" : "AWS::StackName" }
 				},{
-					"Key" : "Name", 
+					"Key" : "Name",
 					"Value" : { "Fn::Join" : [ "", [
 						{ "Ref" : "AWS::StackName" }, " - openvpn" ] ] }
 				} ]
 			}
-		}, 
+		},
 		"privateInterfaceOpenVPN" : {
  			"Type" : "AWS::EC2::NetworkInterface",
+			"Condition" : "openVpnCreation",
 			"Properties" : {
 				"SubnetId" : { "Ref" : "PrivateSubnet" },
 				"GroupSet" : [ { "Ref" : "redBorderPrivateSecurityGroup" } ]
 			}
-		}, 
+		},
 		"privateInterfaceAttachmentOpenVPN" : {
 			"Type": "AWS::EC2::NetworkInterfaceAttachment",
+			"Condition" : "openVpnCreation",
 			"Properties" : {
-				"DeleteOnTermination" : "true", 
+				"DeleteOnTermination" : "true",
 				"DeviceIndex" : "1",
 				"InstanceId" : { "Ref" : "openVPNInstance" },
 				"NetworkInterfaceId" : { "Ref" : "privateInterfaceOpenVPN" }
