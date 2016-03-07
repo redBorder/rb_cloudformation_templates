@@ -971,6 +971,7 @@
 			"Condition" : "customRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
+				"ImageId" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] }, 
 				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"ImageId" : { "Ref" : "AMI" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "custom", { "Ref" : "InstanceSize" } ] },
