@@ -200,6 +200,33 @@
 		},
 		"regionNVirginia" : {
 			"Fn::Equals" : [ "us-east-1", { "Ref" : "AWS::Region" } ]
+		},
+		"kafkaRoleCreation" : {
+			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Ref" : "MinKafkaInstances" } ] } ]
+		},
+		"http2kRoleCreation" : {
+			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Ref" : "MinHttp2kInstances" } ] } ]
+		},
+		"webRoleCreation" : {
+			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Ref" : "MinWebInstances" } ] } ]
+		},
+		"brokerRoleCreation" : {
+			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Ref" : "MinBrokerInstances" } ] } ]
+		},
+		"middlemanagerRoleCreation" : {
+			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Ref" : "MinMiddlemanagerInstances" } ] } ]
+		},
+		"historicalRoleCreation" : {
+			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Ref" : "MinHistoricalInstances" } ] } ]
+		},
+		"historicalhotRoleCreation" : {
+			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Ref" : "MinHistoricalhotInstances" } ] } ]
+		},
+		"historicalGenericRoleCreation" : {
+			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Ref" : "MinHistoricalhotInstances" } ] } ]
+		},
+		"samzaRoleCreation" : {
+			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Ref" : "MinSamzaInstances" } ] } ]
 		}
 	},
 	
@@ -234,6 +261,7 @@
 		},
 		"BackupSubnet" : {
 			"Type" : "AWS::EC2::Subnet",
+			"Condition" : "RDSCreation",
 			"Properties" : {
 				"VpcId" : { "Ref" : "VPC" },
 				"CidrBlock" : "172.16.3.0/24",
@@ -439,7 +467,7 @@
 			"Properties" : {
 				"AccessControl" : "Private"
 			},
-			"DeletionPolicy" : "Delete"
+			"DeletionPolicy" : "Retain"
 		},
 		"S3BucketPolicy" : {
 			"Type" : "AWS::S3::BucketPolicy",
@@ -1090,6 +1118,7 @@
 
 		"kafkaGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"Condition" : "kafkaRoleCreation",
 			"DependsOn" : "corezkGroup",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
@@ -1126,6 +1155,7 @@
 		},
 		"kafkaLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Condition" : "kafkaRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
@@ -1187,6 +1217,7 @@
 
 		"http2kGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"Condition" : "http2kRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
@@ -1226,6 +1257,7 @@
 		},
 		"http2kLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Condition" : "http2kRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
@@ -1286,6 +1318,7 @@
 		},
 		"http2kLifecycleHook" : {
 			"Type" : "AWS::AutoScaling::LifecycleHook",
+			"Condition" : "http2kRoleCreation",
 			"Properties" : {
 				"AutoScalingGroupName" : { "Ref" : "http2kGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
@@ -1295,6 +1328,7 @@
 		},
 		"http2kHighCPUAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "http2kRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - http2kHighCPUAlarm" ] ] },
 				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so high, triggers a scaling out",
@@ -1315,6 +1349,7 @@
 		},
 		"http2kScaleUpPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "http2kRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "http2kGroup" },
@@ -1324,6 +1359,7 @@
 		},
 		"http2kLowCPUAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "http2kRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - http2kLowCPUAlarm" ] ] },
 				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so low, triggers a scaling in",
@@ -1344,6 +1380,7 @@
 		},
 		"http2kScaleDownPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "http2kRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "http2kGroup" },
@@ -1353,6 +1390,7 @@
 		},
 		"webGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"Condition" : "webRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
@@ -1391,6 +1429,7 @@
 		},
 		"webLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Condition" : "webRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
@@ -1452,6 +1491,7 @@
 		},
 		"webLifecycleHook" : {
 			"Type" : "AWS::AutoScaling::LifecycleHook",
+			"Condition" : "webRoleCreation",
 			"Properties" : {
 				"AutoScalingGroupName" : { "Ref" : "webGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
@@ -1461,6 +1501,7 @@
 		},
 		"webHighCPUAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "webRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - webHighCPUAlarm" ] ] },
 				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so high, triggers a scaling out",
@@ -1481,6 +1522,7 @@
 		},
 		"webScaleUpPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "webRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "webGroup" },
@@ -1490,6 +1532,7 @@
 		},
 		"webLowCPUAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "webRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - webLowCPUAlarm" ] ] },
 				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so low, triggers a scaling in",
@@ -1510,6 +1553,7 @@
 		},
 		"webScaleDownPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "webRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "webGroup" },
@@ -1520,6 +1564,7 @@
 
 		"brokerGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"Condition" : "brokerRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
@@ -1557,6 +1602,7 @@
 		},
 		"brokerLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
@@ -1618,6 +1664,7 @@
 		},
 		"brokerLifecycleHook" : {
 			"Type" : "AWS::AutoScaling::LifecycleHook",
+			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AutoScalingGroupName" : { "Ref" : "brokerGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
@@ -1627,6 +1674,7 @@
 		},
 		"brokerHighCPUAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - brokerHighCPUAlarm" ] ] },
 				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so high, triggers a scaling out",
@@ -1647,6 +1695,7 @@
 		},		
 		"brokerLowCPUAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - brokerLowCPUAlarm" ] ] },
 				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so low, triggers a scaling in",
@@ -1667,6 +1716,7 @@
 		},
 		"brokerHighRAMAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - brokerHighRAMAlarm" ] ] },
 				"AlarmDescription" : "Alarm for web autoscaling. When RAM is so high, triggers a scaling out",
@@ -1687,6 +1737,7 @@
 		},		
 		"brokerLowRAMAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - brokerLowRAMAlarm" ] ] },
 				"AlarmDescription" : "Alarm for web autoscaling. When CPU is so low, triggers a scaling in",
@@ -1707,6 +1758,7 @@
 		},
 		"brokerScaleUpPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "brokerGroup" },
@@ -1716,6 +1768,7 @@
 		},
 		"brokerScaleDownPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "brokerGroup" },
@@ -1726,6 +1779,7 @@
 
 		"middlemanagerGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"Condition" : "middlemanagerRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
@@ -1763,6 +1817,7 @@
 		},
 		"middlemanagerLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
@@ -1824,6 +1879,7 @@
 		},
 		"middleManagerLifecycleHook" : {
 			"Type" : "AWS::AutoScaling::LifecycleHook",
+			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"AutoScalingGroupName" : { "Ref" : "middlemanagerGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
@@ -1834,6 +1890,7 @@
 		},
 		"middlemanagerHighCapacityAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - middlemanagerHighCapacityAlarm" ] ] },
 				"AlarmDescription" : "Alarm for middleManager autoscaling. When capacity is so high, triggers a scaling out",
@@ -1854,6 +1911,7 @@
 		},
 		"middlemanagerPendingTasksAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - middlemanagerPendingTasksAlarm" ] ] },
 				"AlarmDescription" : "Alarm for middleManager autoscaling. When capacity is so high, triggers a scaling out",
@@ -1874,6 +1932,7 @@
 		},
 		"middleManagerScaleUpPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "middlemanagerGroup" },
@@ -1883,6 +1942,7 @@
 		}, 
 		"middlemanagerLowCapacityAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - middlemanagerLowCapacityAlarm" ] ] },
 				"AlarmDescription" : "Alarm for middleManager autoscaling. When capacity is so low, triggers a scaling in",
@@ -1903,6 +1963,7 @@
 
 		"historicalGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"Condition" : "historicalRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
@@ -1940,6 +2001,7 @@
 		},
 		"historicalLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Condition" : "historicalRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
@@ -2001,6 +2063,7 @@
 		},
 		"historicalLifecycleHook" : {
 			"Type" : "AWS::AutoScaling::LifecycleHook",
+			"Condition" : "historicalRoleCreation",
 			"Properties" : {
 				"AutoScalingGroupName" : { "Ref" : "historicalGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
@@ -2011,6 +2074,7 @@
 		},
 		"historicalHighCapacityAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "historicalRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalHighCapacityAlarm" ] ] },
 				"AlarmDescription" : "Alarm for historical hot autoscaling. When capacity is so high, triggers a scaling out",
@@ -2031,6 +2095,7 @@
 		},
 		"historicalLowCapacityAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "historicalRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalLowCapacityAlarm" ] ] },
 				"AlarmDescription" : "Alarm for historical hot  autoscaling. When disk usage is so low, triggers a scaling in",
@@ -2051,6 +2116,7 @@
 		},
 		"historicalScaleUpPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "historicalRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "historicalGroup" },
@@ -2060,6 +2126,7 @@
 		}, 
 		"historicalScaleDownPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "historicalRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "historicalGroup" },
@@ -2070,6 +2137,7 @@
 
 		"historicalhotGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"Condition" : "historicalhotRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
@@ -2107,6 +2175,7 @@
 		},
 		"historicalhotLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
@@ -2174,6 +2243,7 @@
 		},
 		"historicalhotLifecycleHook" : {
 			"Type" : "AWS::AutoScaling::LifecycleHook",
+			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
 				"AutoScalingGroupName" : { "Ref" : "historicalhotGroup"  },
 				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
@@ -2184,6 +2254,7 @@
 		},
 		"historicalhotHighCapacityAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalHotHighCapacityAlarm" ] ] },
 				"AlarmDescription" : "Alarm for historical hot autoscaling. When capacity is so high, triggers a scaling out",
@@ -2204,6 +2275,7 @@
 		},
 		"historicalhotLowCapacityAlarm" : {
 			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
 				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - historicalHotLowCapacityAlarm" ] ] },
 				"AlarmDescription" : "Alarm for historical hot  autoscaling. When RAM is so low, triggers a scaling in",
@@ -2224,6 +2296,7 @@
 		},
 		"historicalhotScaleUpPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "historicalhotGroup" },
@@ -2233,6 +2306,7 @@
 		}, 
 		"historicalhotScaleDownPolicy" : {
 			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
 				"AdjustmentType" : "ChangeInCapacity",
 				"AutoScalingGroupName" : { "Ref" : "historicalhotGroup" },
@@ -2243,6 +2317,7 @@
 
 		"historicalGenericGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"Condition" : "historicalGenericRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
@@ -2280,6 +2355,7 @@
 		},
 		"historicalGenericLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Condition" : "historicalGenericRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
@@ -2347,6 +2423,7 @@
 
 		"samzaGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"Condition" : "samzaRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
@@ -2384,6 +2461,7 @@
 		},
 		"samzaLaunch" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Condition" : "samzaRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
