@@ -340,17 +340,20 @@
 		},
 		"IAMUser" : {
 			"Type" : "AWS::IAM::User",
+			"DeletionPolicy" : "Retain",
 			"Properties" : { }
 		},
 		"IAMAccessKey" : {
 			"Type" : "AWS::IAM::AccessKey",
+			"DeletionPolicy" : "Retain",
 			"Properties" : {
 				"Status" : "Active",
 				"UserName" : { "Ref" : "IAMUser" }
 			}
 		},
 		"IAMPolicy" : {
-			"Type" : "AWS::IAM::Policy", 
+			"Type" : "AWS::IAM::Policy",
+			"DeletionPolicy" : "Retain",
 			"Properties" : {
 				"PolicyName" : "RB-CF-POLICY", 
 				"PolicyDocument" : {
@@ -414,17 +417,20 @@
 		},
 		"IAMUserChef" : {
 			"Type" : "AWS::IAM::User",
+			"DeletionPolicy" : "Retain",
 			"Properties" : { }
 		},
 		"IAMAccessKeyChef" : {
 			"Type" : "AWS::IAM::AccessKey",
+			"DeletionPolicy" : "Retain",
 			"Properties" : {
 				"Status" : "Active",
 				"UserName" : { "Ref" : "IAMUserChef" }
 			}
 		},
 		"IAMPolicyChef" : {
-			"Type" : "AWS::IAM::Policy", 
+			"Type" : "AWS::IAM::Policy",
+			"DeletionPolicy" : "Retain",
 			"Properties" : {
 				"PolicyName" : "RB-CF-POLICY", 
 				"PolicyDocument" : {
