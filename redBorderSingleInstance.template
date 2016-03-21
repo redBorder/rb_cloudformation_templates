@@ -355,7 +355,7 @@
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
 					"CHEF_AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKeyChef" }, "\"\n",
 					"CHEF_AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKeyChef", "SecretAccessKey" ] }, "\"\n",
-					"ENRICHMODE=samza\n",
+					"#ENRICHMODE=samza\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
