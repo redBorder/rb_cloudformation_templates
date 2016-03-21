@@ -86,15 +86,15 @@
 		"InstanceTypeMap" : {
 			"master" :        { "small":"m4.xlarge",      "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
 			"custom" :        { "small":"m4.large",       "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
-			"corezk" :        { "small":"m4.large",       "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
-			"kafka" :         { "small":"m4.large",       "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
-			"http2k" :        { "small":"m4.large",       "medium":"c4.large",        "large":"c4.2xlarge"       },
-			"web" :           { "small":"m4.large",       "medium":"c4.xlarge",       "large":"c4.4xlarge"       },
-			"broker" :        { "small":"m4.large",       "medium":"r3.xlarge",       "large":"r3.4xlarge"       },
-			"middlemanager" : { "small":"m4.large",       "medium":"r3.2xlarge",      "large":"r3.8xlarge"       },
-			"historical" :    { "small":"m4.large",       "medium":"c4.2xlarge",      "large":"c4.8xlarge"       },
-			"historicalhot" : { "small":"m4.large",       "medium":"r3.xlarge",       "large":"m4.10xlarge"      },
-			"samza" :         { "small":"m4.xlarge",      "medium":"c4.4xlarge",      "large":"c4.8xlarge"       }
+			"corezk" :        { "small":"m4.xlarge",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
+			"kafka" :         { "small":"i2.xlarge",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
+			"http2k" :        { "small":"c4.large",       "medium":"c4.large",        "large":"c4.2xlarge"       },
+			"web" :           { "small":"c4.xlarge",       "medium":"c4.xlarge",       "large":"c4.4xlarge"       },
+			"broker" :        { "small":"r3.xlarge",       "medium":"r3.xlarge",       "large":"r3.4xlarge"       },
+			"middlemanager" : { "small":"r3.xlarge",       "medium":"r3.2xlarge",      "large":"r3.8xlarge"       },
+			"historical" :    { "small":"c4.2xlarge",       "medium":"c4.2xlarge",      "large":"c4.8xlarge"       },
+			"historicalhot" : { "small":"r3.xlarge",       "medium":"r3.xlarge",       "large":"m4.10xlarge"      },
+			"samza" :         { "small":"c4.2xlarge",      "medium":"c4.4xlarge",      "large":"c4.8xlarge"       }
 		}
 	},
 
@@ -236,17 +236,20 @@
 		},
 		"IAMUser" : {
 			"Type" : "AWS::IAM::User",
+			"DeletionPolicy" : "Retain",
 			"Properties" : { }
 		},
 		"IAMAccessKey" : {
 			"Type" : "AWS::IAM::AccessKey",
+			"DeletionPolicy" : "Retain",
 			"Properties" : {
 				"Status" : "Active",
 				"UserName" : { "Ref" : "IAMUser" }
 			}
 		},
 		"IAMPolicy" : {
-			"Type" : "AWS::IAM::Policy", 
+			"Type" : "AWS::IAM::Policy",
+			"DeletionPolicy" : "Retain",
 			"Properties" : {
 				"PolicyName" : "RB-CF-POLICY", 
 				"PolicyDocument" : {
@@ -310,17 +313,20 @@
 		},
 		"IAMUserChef" : {
 			"Type" : "AWS::IAM::User",
+			"DeletionPolicy" : "Retain",
 			"Properties" : { }
 		},
 		"IAMAccessKeyChef" : {
 			"Type" : "AWS::IAM::AccessKey",
+			"DeletionPolicy" : "Retain",
 			"Properties" : {
 				"Status" : "Active",
 				"UserName" : { "Ref" : "IAMUserChef" }
 			}
 		},
 		"IAMPolicyChef" : {
-			"Type" : "AWS::IAM::Policy", 
+			"Type" : "AWS::IAM::Policy",
+			"DeletionPolicy" : "Retain",
 			"Properties" : {
 				"PolicyName" : "RB-CF-POLICY", 
 				"PolicyDocument" : {
@@ -354,7 +360,7 @@
 			}
 		},
 		"IAMPolicyLifecycleHook" : {
-			"Type" : "AWS::IAM::Policy", 
+			"Type" : "AWS::IAM::Policy",
 			"Properties" : {
 				"PolicyName" : "RB-CF-POLICY-FOR-LIFECYCLE-HOOKS", 
 				"PolicyDocument" :  {
@@ -919,7 +925,7 @@
 					"CHEF_AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKeyChef" }, "\"\n",
 					"CHEF_AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKeyChef", "SecretAccessKey" ] }, "\"\n",
 					{ "Fn::If" : [ "Restore", "CRESTORE=1\n", "" ] },
-					"ENRICHMODE=samza\n",
+					"#ENRICHMODE=samza\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -965,14 +971,6 @@
 				"ResourceSignal" : {
 					"Count" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "custom" ] }, 
 					"Timeout" : "PT200M"
-				}
-			},
-			"UpdatePolicy": {
-				"AutoScalingRollingUpdate": {
-					"MinInstancesInService": "1",
-					"MaxBatchSize": "1",
-					"PauseTime" : "PT40M",
-					"WaitOnResourceSignals": "true"
 				}
 			}
 		},
@@ -1170,14 +1168,6 @@
 					"Count" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "corezk" ] }, 
 					"Timeout" : "PT200M"
 				}
-			},
-			"UpdatePolicy": {
-				"AutoScalingRollingUpdate": {
-					"MinInstancesInService": "1",
-					"MaxBatchSize": "1",
-					"PauseTime" : "PT40M",
-					"WaitOnResourceSignals": "true"
-				}
 			}
 		},
 		"corezkLaunch" : {
@@ -1286,16 +1276,8 @@
 			},
 			"CreationPolicy" : {
 				"ResourceSignal" : {
-					"Count" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "kafka" ] }, 
+					"Count" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "kafka" ] },
 					"Timeout" : "PT200M"
-				}
-			},
-			"UpdatePolicy": {
-				"AutoScalingRollingUpdate": {
-					"MinInstancesInService": "1",
-					"MaxBatchSize": "1",
-					"PauseTime" : "PT40M",
-					"WaitOnResourceSignals": "true"
 				}
 			}
 		},
@@ -1398,14 +1380,6 @@
 				"ResourceSignal" : {
 					"Count" : { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "http2k" ] }, 
 					"Timeout" : "PT200M"
-				}
-			},
-			"UpdatePolicy": {
-				"AutoScalingRollingUpdate": {
-					"MinInstancesInService": "1",
-					"MaxBatchSize": "1",
-					"PauseTime" : "PT40M",
-					"WaitOnResourceSignals": "true"
 				}
 			}
 		},
