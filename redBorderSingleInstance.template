@@ -131,9 +131,8 @@
 			}
 		},
 		"IAMPolicy" : {
-			"Type" : "AWS::IAM::Policy",
+			"Type" : "AWS::IAM::ManagedPolicy",
 			"Properties" : {
-				"PolicyName" : "RB-CF-POLICY",
 				"PolicyDocument" : {
 					"Version" : "2012-10-17",
 					"Statement": [ {
@@ -206,7 +205,7 @@
 			"Properties" : {
 				"AccessControl" : "Private"
 			},
-			"DeletionPolicy" : "Delete"
+			"DeletionPolicy" : "Retain"
 		},
 		"S3BucketPolicy" : {
 			"Type" : "AWS::S3::BucketPolicy",
