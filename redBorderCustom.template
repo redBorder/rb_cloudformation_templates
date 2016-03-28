@@ -23,7 +23,7 @@
 		"MinKafkaInstances" : {
 			"Description" : "minimun number of nodes for kafka role.",
 			"Type" : "Number",
-			"MinValue" : "1",
+			"MinValue" : "0",
 			"MaxValue" : "10",
 			"Default" : "1",
 			"ConstraintDescription" : "number of nodes must between 1 and 10"
@@ -31,7 +31,7 @@
 		"MinWebInstances" : {
 			"Description" : "minimun number of nodes for web role.",
 			"Type" : "Number",
-			"MinValue" : "1",
+			"MinValue" : "0",
 			"MaxValue" : "10",
 			"Default" : "1",
 			"ConstraintDescription" : "number of nodes must between 1 and 10"
@@ -47,7 +47,7 @@
 		"MinMiddlemanagerInstances" : {
 			"Description" : "minimun number of nodes for broker role.",
 			"Type" : "Number",
-			"MinValue" : "1",
+			"MinValue" : "0",
 			"MaxValue" : "10",
 			"Default" : "1",
 			"ConstraintDescription" : "number of nodes must between 1 and 10"
@@ -55,7 +55,7 @@
 		"MinBrokerInstances" : {
 			"Description" : "minimun number of nodes for broker role.",
 			"Type" : "Number",
-			"MinValue" : "1",
+			"MinValue" : "0",
 			"MaxValue" : "10",
 			"Default" : "1",
 			"ConstraintDescription" : "number of nodes must between 1 and 10"
@@ -63,7 +63,7 @@
 		"MinHistoricalInstances" : {
 			"Description" : "minimun number of nodes for historical role.",
 			"Type" : "Number",
-			"MinValue" : "1",
+			"MinValue" : "0",
 			"MaxValue" : "10",
 			"Default" : "1",
 			"ConstraintDescription" : "number of nodes must between 1 and 10"
@@ -71,7 +71,7 @@
 		"MinHistoricalhotInstances" : {
 			"Description" : "minimun number of nodes for historicalhot role.",
 			"Type" : "Number",
-			"MinValue" : "1",
+			"MinValue" : "0",
 			"MaxValue" : "10",
 			"Default" : "1",
 			"ConstraintDescription" : "number of nodes must between 1 and 10"
@@ -79,7 +79,7 @@
 		"MinSamzaInstances" : {
 			"Description" : "minimun number of nodes for samza role.",
 			"Type" : "Number",
-			"MinValue" : "1",
+			"MinValue" : "0",
 			"MaxValue" : "10",
 			"Default" : "1",
 			"ConstraintDescription" : "number of nodes must between 1 and 10"
@@ -352,10 +352,9 @@
 			}
 		},
 		"IAMPolicy" : {
-			"Type" : "AWS::IAM::Policy",
+			"Type" : "AWS::IAM::ManagedPolicy",
 			"DeletionPolicy" : "Retain",
 			"Properties" : {
-				"PolicyName" : "RB-CF-POLICY", 
 				"PolicyDocument" : {
 					"Version" : "2012-10-17",
 					"Statement": [ {
@@ -1121,7 +1120,7 @@
 						] ] }, 
 					"" ] },
 					"ENRICHMODE=samza\n",
-					"MMDOWNALARMNAME=\"", { "Ref" : "middlemanagerLowCapacityAlarm" }, "\"\n",
+					{ "Fn::If" : [ "middlemanagerRoleCreation", { "Fn::Join" : [ "", [ "MMDOWNALARMNAME=\"", { "Ref" : "middlemanagerLowCapacityAlarm" }, "\"\n" ] ] } , "" ] },
 					"CMDFINISH='rb_druid_rules.rb -t _default -p pt1d -r 2 -d forever -i 1'",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
