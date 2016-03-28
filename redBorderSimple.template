@@ -224,6 +224,7 @@
 						"Action" : [ "sts:AssumeRole" ]
 					} ]
 				},
+				"ManagedPolicyArns" : [ { "Ref" : "IAMPolicy" } ],
 				"Path" : "/"
 			}
 		},
@@ -237,7 +238,9 @@
 		"IAMUser" : {
 			"Type" : "AWS::IAM::User",
 			"DeletionPolicy" : "Retain",
-			"Properties" : { }
+			"Properties" : {
+				"ManagedPolicyArns" : [ { "Ref" : "IAMPolicy" } ]
+			}
 		},
 		"IAMAccessKey" : {
 			"Type" : "AWS::IAM::AccessKey",
@@ -248,10 +251,9 @@
 			}
 		},
 		"IAMPolicy" : {
-			"Type" : "AWS::IAM::Policy",
+			"Type" : "AWS::IAM::ManagedPolicy",
 			"DeletionPolicy" : "Retain",
 			"Properties" : {
-				"PolicyName" : "RB-CF-POLICY", 
 				"PolicyDocument" : {
 					"Version" : "2012-10-17",
 					"Statement": [ {
@@ -306,9 +308,7 @@
 						"Action" : [ "logs:*" ],
 						"Resource" : "*"
 					} ]
-				},
-				"Roles" :  [ { "Ref" : "IAMRole" } ],
-				"Users" : [ { "Ref" : "IAMUser" } ]
+				}
 			}
 		},
 		"IAMUserChef" : {
@@ -980,6 +980,7 @@
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
+				"KeyName"        : { "Ref" : "KeyName" },
 				"ImageId" : { "Ref" : "AMI" },
 				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "custom", { "Ref" : "InstanceSize" } ] },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
