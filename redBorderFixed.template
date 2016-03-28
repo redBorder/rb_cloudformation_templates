@@ -44,37 +44,17 @@
 	},
 
 	"Mappings" : {
-		"RolesDistributionMap" : {
-			"1"  : { "master": "1", "custom":"0", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
-			"2"  : { "master": "1", "custom":"1", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
-			"3"  : { "master": "1", "custom":"2", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
-			"4"  : { "master": "1", "custom":"3", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
-			"5"  : { "master": "1", "custom":"4", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
-			"6"  : { "master": "1", "custom":"5", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
-			"7"  : { "master": "1", "custom":"6", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
-			"8"  : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "0", "web":"1", "broker":"1", "middlemanager":"1", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"9"  : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "1", "web":"1", "broker":"1", "middlemanager":"1", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"10" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "1", "web":"1", "broker":"1", "middlemanager":"2", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"11" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"2", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"12" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"2", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"13" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"3", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"14" : { "master": "0", "custom":"0", "corezk":"3", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"2", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"15" : { "master": "0", "custom":"0", "corezk":"3", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"3", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"16" : { "master": "0", "custom":"0", "corezk":"3", "kafka":"2", "http2k": "2", "web":"2", "broker":"1", "middlemanager":"3", "historical":"1", "historicalhot":"1", "samza":"1" }
-		},
-
 		"InstanceTypeMap" : {
 			"master" :        { "small":"m4.xlarge",      "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
 			"custom" :        { "small":"m4.large",       "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
-			"corezk" :        { "small":"m4.xlarge",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
-			"kafka" :         { "small":"i2.xlarge",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
+			"corezk" :        { "small":"m4.large",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
+			"kafka" :         { "small":"m4.large",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
 			"http2k" :        { "small":"c4.large",       "medium":"c4.large",        "large":"c4.2xlarge"       },
-			"web" :           { "small":"c4.xlarge",       "medium":"c4.xlarge",       "large":"c4.4xlarge"       },
-			"broker" :        { "small":"r3.xlarge",       "medium":"r3.xlarge",       "large":"r3.4xlarge"       },
-			"middlemanager" : { "small":"r3.xlarge",       "medium":"r3.2xlarge",      "large":"r3.8xlarge"       },
-			"historical" :    { "small":"c4.2xlarge",       "medium":"c4.2xlarge",      "large":"c4.8xlarge"       },
-			"historicalhot" : { "small":"r3.xlarge",       "medium":"r3.xlarge",       "large":"m4.10xlarge"      },
-			"samza" :         { "small":"c4.2xlarge",      "medium":"c4.4xlarge",      "large":"c4.8xlarge"       }
+			"web" :           { "small":"c4.large",       "medium":"c4.xlarge",       "large":"c4.4xlarge"       },
+			"broker" :        { "small":"r3.large",       "medium":"r3.xlarge",       "large":"r3.4xlarge"       },
+			"middlemanager" : { "small":"r3.large",       "medium":"r3.2xlarge",      "large":"r3.8xlarge"       },
+			"historical" :    { "small":"c4.large",       "medium":"c4.2xlarge",      "large":"c4.8xlarge"       },
+			"samza" :         { "small":"c4.xlarge",      "medium":"c4.4xlarge",      "large":"c4.8xlarge"       }
 		}
 	},
 
@@ -199,9 +179,8 @@
 			}
 		},
 		"IAMPolicy" : {
-			"Type" : "AWS::IAM::Policy", 
+			"Type" : "AWS::IAM::ManagedPolicy",
 			"Properties" : {
-				"PolicyName" : "RB-CF-POLICY", 
 				"PolicyDocument" : {
 					"Version" : "2012-10-17",
 					"Statement": [ {
@@ -1440,95 +1419,6 @@
 			}
 		},
 
-		"historicalhotInstance" : {
-			"Type" : "AWS::EC2::Instance",
-			"DependsOn" : "KafkaInstance",
-			"Condition" : "othersRoleCreations",
-			"Properties" : {
-				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "historicalhot", { "Ref" : "InstanceSize" } ] },
-				"ImageId" : { "Ref" : "AMI" },
-				"KeyName"        : { "Ref" : "KeyName" },
-				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
-				"NetworkInterfaces": [ {
-					"AssociatePublicIpAddress": "true",
-					"DeviceIndex": "0",
-					"GroupSet": [{ "Ref" : "redBorderPublicSecurityGroup" }],
-					"SubnetId": { "Ref" : "PublicSubnet" }
-				} ],
-				"BlockDeviceMappings" : [ {
-					"DeviceName" : "/dev/sda1",
-					"Ebs" : {
-						"VolumeSize" : "50",
-						"VolumeType" : "gp2",
-						"DeleteOnTermination" : "true"
-					}
-				},  {
-					"DeviceName" : "/dev/sdb",
-					"VirtualName" : "ephemeral0"
-				},  {
-					"DeviceName" : "/dev/sdc",
-					"VirtualName" : "ephemeral1"
-				} ],
-				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
-					"#!/bin/bash\n",
-					"NODEROLE=historical\n",
-					"#NODESERVICES=\n",
-					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
-					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n",
-					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n",
-					"REGION=", { "Ref" : "AWS::Region" }, "\n",
-					"VPCID=", { "Ref" : "VPC" }, "\n",
-					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
-					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
-					"AUTOSCALINGGROUPNAME=historicalhotGroup\n",
-					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n",
-					"S3BUCKET=", { "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, " \n",
-					{ "Fn::If" : [ "regionNVirginia",
-						"S3HOST=s3.amazonaws.com\n",
-						{ "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }
-					] },
-					"S3TYPE=aws\n",
-					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
-					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"\n\n",
-					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
-					"{\n",
-					"  \"redBorder\" : {\n",
-					"    \"aws\" : {\n",
-					"      \"cloudwatch\" : \"true\",\n",
-					"      \"autoscaled\" : \"true\"\n",
-					"     },\n",
-					"    \"druid\" : {\n",
-					"      \"historical\" : {\n",
-					"        \"tier\" : \"hot\",\n",
-					"        \"memory_only\" : \"1\"\n",
-					"       }\n",
-					"    }\n",
-					"  }\n",
-					"}\n",
-					"_RBEOF2_\n",
-					". /opt/rb/bin/rb_set_aws_interface.sh",
-					"\n"
-				] ] } },
-				"Tags" : [ {
-					"Key" : "Role",
-					"Value" : "historicalhot"
-				},{
-					"Key" : "Cluster",
-					"Value" : { "Ref" : "AWS::StackName" }
-				},{
-					"Key" : "Name",
-					"Value" : { "Fn::Join" : [ "", [
-						{ "Ref" : "AWS::StackName" }, " - historicalhot" ] ] }
-				} ]
-			},
-			"CreationPolicy" : {
-				"ResourceSignal" : {
-					"Count" : "1",
-					"Timeout" : "PT200M"
-				}
-			}
-		},
 		"samzaInstance" : {
 			"Type" : "AWS::EC2::Instance",
 			"DependsOn" : "KafkaInstance",
