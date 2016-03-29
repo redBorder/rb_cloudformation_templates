@@ -22,13 +22,23 @@
 		"CDOMAIN" : {
 			"Description" : "DNS Domain for cluster",
 			"Type" : "String"			
+		},
+		"PreviousS3Bucket" : {
+			"Description" : "S3 Bucket from a previous installation, for restore. Keep empty to avoid restore and create new bucket",
+			"Type" : "String"
 		}
 	},
 
 	"Conditions" : {
 		"regionNVirginia" : {
 			"Fn::Equals" : [ "us-east-1", { "Ref" : "AWS::Region" } ]
-		}		
+		},
+		"S3Creation" : {
+			"Fn::Equals" : [ "", { "Ref" : "PreviousS3Bucket" } ]
+		},
+		"Restore" : {
+			"Fn::Not" : [ { "Fn::Equals" : [ "", { "Ref" : "PreviousS3Bucket" } ] } ]
+		}
 	},
 	
 	"Resources" : {
@@ -147,11 +157,11 @@
 						"Action" : "s3:*",
 						"Effect" : "Allow",
 						"Resource" : [ { "Fn::Join" :
-							[ "", [ "arn:aws:s3:::",
-							{ "Ref" : "S3Bucket" }, "/*" ] ] },
+						[ "", [ "arn:aws:s3:::",
+							{ "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] } ] ] },
 							{ "Fn::Join" :
 							[ "", [ "arn:aws:s3:::",
-							{ "Ref" : "S3Bucket" } ] ] } ]
+								{ "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, "/*" ] ] } ]
 					}, {
 						"Effect": "Allow",
 						"Action": [ "cloudformation:DescribeStackResource" ],
@@ -192,8 +202,8 @@
 						"Action" : "s3:*",
 						"Effect" : "Allow",
 						"Resource" : [ { "Fn::Join" :
-							[ "", [ "arn:aws:s3:::",
-							{ "Ref" : "S3Bucket" },
+						[ "", [ "arn:aws:s3:::",
+							{ "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] },
 							"/organization-00000000000000000000000000000000/*" ] ] } ]
 					} ]
 				},
@@ -202,6 +212,7 @@
 		},
 		"S3Bucket" : {
 			"Type" : "AWS::S3::Bucket",
+			"Condition" : "S3Creation",
 			"Properties" : {
 				"AccessControl" : "Private"
 			},
@@ -209,6 +220,7 @@
 		},
 		"S3BucketPolicy" : {
 			"Type" : "AWS::S3::BucketPolicy",
+			"Condition" : "S3Creation",
 			"Properties" : {
 				"Bucket" : { "Ref" : "S3Bucket" },
 				"PolicyDocument" : {
@@ -342,7 +354,8 @@
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"LOGWATCHG=", { "Ref" : "AWS::StackName" }, "\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n",
-					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
+					"S3BUCKET=", { "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, " \n",
+					{ "Fn::If" : [ "Restore", "CRESTORE=1\n", "" ] },
 					{ "Fn::If" : [ "regionNVirginia",
 						"S3HOST=s3.amazonaws.com\n",
 						{ "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }
