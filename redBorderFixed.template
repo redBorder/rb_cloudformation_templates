@@ -874,7 +874,7 @@
 					"CHEF_AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKeyChef", "SecretAccessKey" ] }, "\"\n",
 					"ENRICHMODE=samza\n",
 					{ "Fn::If" : [ "Restore", "CRESTORE=1\n", "" ] },
-					"CMDFINISH='rb_druid_rules.rb -t _default -p p1d -r 2 -d forever -i 1'",
+					"CMDFINISH='rb_druid_rules.rb -t _default -p pt24h -r 1 -d forever -i 1'",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
