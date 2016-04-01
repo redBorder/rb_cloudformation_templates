@@ -2661,7 +2661,7 @@
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=datanodeGroup\n",
 					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n",
-					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
+					"S3BUCKET=", { "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, " \n",
 					"S3HOST=s3.amazonaws.com\n",
 					"S3TYPE=aws\n",
 					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
