@@ -2288,7 +2288,7 @@
 					"     },\n",
 					"    \"druid\" : {\n",
 					"      \"historical\" : {\n",
-					"        \"tier\" : \"hot\"\n",
+					"        \"tier\" : \"hot\",\n",
 					"        \"memory_only\" : \"1\"\n",
 					"     }\n",
 					"    }\n",
