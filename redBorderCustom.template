@@ -84,6 +84,14 @@
 			"Default" : "1",
 			"ConstraintDescription" : "number of nodes must between 1 and 10"
 		},
+		"MinDatanodeInstances" : {
+			"Description" : "minimun number of nodes for datanode role.",
+			"Type" : "Number",
+			"MinValue" : "0",
+			"MaxValue" : "10",
+			"Default" : "0",
+			"ConstraintDescription" : "number of nodes must between 1 and 10"
+		},
 		"HistoricalGenericInstances" : {
 			"Description" : "number of nodes for historialGeneric role.",
 			"Type" : "Number",
@@ -184,6 +192,7 @@
 			"historicalhot" :     { "small":"r3.xlarge",      "medium":"r3.xlarge",       "large":"m4.10xlarge"      },
 			"historicalGeneric" : { "small":"r3.xlarge",      "medium":"r3.xlarge",       "large":"m4.10xlarge"      },
 			"samza" :             { "small":"c4.2xlarge",     "medium":"c4.4xlarge",      "large":"c4.8xlarge"       },
+			"datanode" :          { "small":"m4.xlarge",      "medium":"m4.xlarge",       "large":"m4.2xlarge"       },
 			"rds" :               { "small":"db.m3.large",    "medium":"db.m3.2xlarge",   "large":"db.r3.large"      },
 			"memcached" :         { "small":"cache.t2.small", "medium":"cache.m3.xlarge", "large":"cache.m3.2xlarge" }
 		}
@@ -2577,6 +2586,102 @@
 				] ] } }
 			}
 		},
+
+		"datanodeGroup" : {
+			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"DependsOn" : "kafkaGroup",
+			"Properties" : {
+				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
+				"LaunchConfigurationName" : { "Ref" : "datanodeLaunch" },
+				"MinSize" : { "Ref" : "MinDatanodeInstances" },
+				"MaxSize" : "10",
+				"NotificationConfiguration" : {
+					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
+					"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
+						"autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+						"autoscaling:EC2_INSTANCE_TERMINATE",
+						"autoscaling:EC2_INSTANCE_TERMINATE_ERROR" ]
+				},
+				"Tags" : [ {
+					"Key" : "Role",
+					"Value" : "datanode",
+					"PropagateAtLaunch" : "true"
+				},{
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" },
+					"PropagateAtLaunch" : "true"
+				},{
+					"Key" : "Name",
+					"Value" : { "Fn::Join" : [ "", [
+						{ "Ref" : "AWS::StackName" }, " - datanode" ] ] },
+					"PropagateAtLaunch" : "true"
+				} ]
+			},
+			"CreationPolicy" : {
+				"ResourceSignal" : {
+					"Count" : { "Ref" : "MinDatanodeInstances" },
+					"Timeout" : "PT200M"
+				}
+			}
+		},
+		"datanodeLaunch" : {
+			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Properties" : {
+				"AssociatePublicIpAddress" : "true",
+				"ImageId" : { "Ref" : "AMI" },
+				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
+				"KeyName"        : { "Ref" : "KeyName" },
+				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "datanode", { "Ref" : "InstanceSize" } ] },
+				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
+				"InstanceMonitoring" : "true",
+				"BlockDeviceMappings" : [ {
+					"DeviceName" : "/dev/sda1",
+					"Ebs" : {
+						"VolumeSize" : "500",
+						"VolumeType" : "gp2",
+						"DeleteOnTermination" : "true"
+					}
+				},  {
+					"DeviceName" : "/dev/sdb",
+					"VirtualName" : "ephemeral0"
+				},  {
+					"DeviceName" : "/dev/sdc",
+					"VirtualName" : "ephemeral1"
+				} ],
+				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+					"#!/bin/bash\n",
+					"NODEROLE=datanode\n",
+					"NODESERVICES=\n",
+					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
+					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n",
+					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n",
+					"REGION=", { "Ref" : "AWS::Region" }, "\n",
+					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
+					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
+					"AUTOSCALINGGROUPNAME=datanodeGroup\n",
+					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n",
+					"S3BUCKET=", { "Ref" : "S3Bucket" }, " \n",
+					"S3HOST=s3.amazonaws.com\n",
+					"S3TYPE=aws\n",
+					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
+					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
+					"\n\n",
+					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
+					"{\n",
+					"  \"redBorder\" : {\n",
+					"    \"aws\" : {\n",
+					"      \"cloudwatch\" : \"true\"\n",
+					"    }\n",
+					"  }\n",
+					"}\n",
+					"_RBEOF2_\n",
+					". /opt/rb/bin/rb_set_aws_interface.sh",
+					"\n"
+				] ] } }
+			}
+		},
+
 		"openVPNInstance" : {
 			"Type" : "AWS::EC2::Instance",
 			"Condition" : "openVPNInstanceCreation",
