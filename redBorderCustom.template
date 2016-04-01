@@ -1070,7 +1070,7 @@
 				"BlockDeviceMappings" : [ {
 					"DeviceName" : "/dev/sda1",
 					"Ebs" : {
-						"VolumeSize" : "50",
+						"VolumeSize" : "200",
 						"VolumeType" : "gp2",
 						"DeleteOnTermination" : "true"
 					}
