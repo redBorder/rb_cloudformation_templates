@@ -1130,7 +1130,10 @@
 					"" ] },
 					"ENRICHMODE=samza\n",
 					{ "Fn::If" : [ "middlemanagerRoleCreation", { "Fn::Join" : [ "", [ "MMDOWNALARMNAME=\"", { "Ref" : "middlemanagerLowCapacityAlarm" }, "\"\n" ] ] } , "" ] },
-					"CMDFINISH='rb_druid_rules.rb -t _default -p pt24h -r 1 -d forever -i 1'",
+					{ "Fn::If" : [ "historicalhotRoleCreation",
+						"CMDFINISH='rb_druid_rules.rb -t _default -p pt24h -r 1 -d forever -i 1'",
+						"CMDFINISH='rb_druid_rules.rb -t _default -p none -r 1 -d forever -i 1'"
+					] },
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -2301,6 +2304,7 @@
 			}
 		},
 		"historicalhotLifecycleHook" : {
+
 			"Type" : "AWS::AutoScaling::LifecycleHook",
 			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
