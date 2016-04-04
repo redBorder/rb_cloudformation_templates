@@ -1217,7 +1217,6 @@
 						"S3HOST=s3.amazonaws.com\n",
 						{ "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }
 					] },
-					] },
 					"S3TYPE=aws\n",
 					"CLOUDDNS=1\n",
 					"LBINTERNAL=1\n",
