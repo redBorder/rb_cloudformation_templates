@@ -146,13 +146,13 @@
 			"Description" : "Indicates if you want internal load balancers (only for cisco environments)",
 			"Type" : "String",
 			"AllowedValues" : [ "true", "false" ],
-			"Default" : "false"
+			"Default" : "true"
 		},
 		"CreateOpenVPNInstance" : {
 			"Description" : "Indicates if you want VPN access to public and private subnets",
 			"Type" : "String",
 			"AllowedValues" : [ "true", "false" ],
-			"Default" : "true"
+			"Default" : "false"
 		},
 		"openVPNAdminPasswd" : {
 			"Description" : "Password for administrator access to OpenVPN server (with user redborder)",
