@@ -177,7 +177,7 @@
 			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Fn::FindInMap" : [ "RolesDistributionMap", { "Ref" : "NumberOfNodes" }, "samza" ] } ] } ]
 		},
 		"openVpnCreation" : {
-			"Fn::Not" : [ { "Fn::Equals" : [ "", { "Ref" : "AMIOpenVPN" } ] } ]
+			"Fn::Equals" : [ "true", { "Ref" : "CreateOpenVPNInstance" } ]
 		},
 		"regionNVirginia" : {
 			"Fn::Equals" : [ "us-east-1", { "Ref" : "AWS::Region" } ]
@@ -187,6 +187,9 @@
 		},
 		"Restore" : {
 			"Fn::Not" : [ { "Fn::Equals" : [ "", { "Ref" : "PreviousS3Bucket" } ] } ]
+		},
+		"EnableNotifications" : {
+			"Fn::Not" : [ { "Fn::Equals" : [ "", { "Ref" : "Email" } ] } ]
 		}
 	},
 	
@@ -481,6 +484,7 @@
 		},
 		"SNSNotificationTopic" : {
 			"Type" : "AWS::SNS::Topic",
+			"Condition" : "EnableNotifications",
 			"Properties" : {
 				"Subscription" : [ {
 					"Protocol" : "email",
