@@ -3,6 +3,41 @@
 
 	"Description" : "AWS CloudFormation template to deploy redBorder Horama Manager",
 
+	"Metadata" : {
+		"AWS::CloudFormation::Interface" : {
+			"ParameterGroups" : [ {
+				"Label" : { "default" : "EC2 Configuration" },
+				"Parameters" : [ "AMIType", "AMIVersion", "NumberOfNodes", "InstanceSize", "KeyName" ]
+			}, {
+				"Label" : { "default" : "Domain and certificates" },
+				"Parameters" : [ "CDOMAIN", "WebSSLCertificateName", "DataSSLCertificateName" ]
+			}, {
+				"Label" : { "default" : "OpenVPN Configuration" },
+				"Parameters" : [ "CreateOpenVPNInstance", "openVPNAdminPasswd" ]
+			}, {
+				"Label" : { "default" : "Restoration options" },
+				"Parameters" : [ "PreviousS3Bucket" ]
+			}, {
+				"Label" : { "default" : "Notifications" },
+				"Parameters" : [ "Email" ]
+			} ],
+			"ParameterLabels" : {
+				"AMIType" : { "default" : "redBorder AMI type" },
+				"AMIVersion" : { "default" : "redBorder AMI version" },
+				"NumberOfNodes" : { "default" : "Number of nodes" },
+				"InstanceSize" : { "default" : "Instance size" },
+				"KeyName" : { "default" : "Key Name" },
+				"CDOMAIN" : { "default" : "Cluster Domain" },
+				"WebSSLCertificateName" : { "default" : "SSL certificate name for Web" },
+				"DataSSLCertificateName" : { "default" : "SSL certificate name for Data" },
+				"CreateOpenVPNInstance" : { "default" : "Create openvpn instance" },
+				"openVPNAdminPasswd" : { "default" : "Openvpn password for admin user" },
+				"PreviousS3Bucket" : { "default" : "S3 Bucket of the previous cluster" },
+				"Email" : { "default" : "Notification email" }
+			}
+		}
+	},
+
 	"Parameters" : {
 		"AMI" : {
 			"Description" : "redBorder AMI ID to deploy", 
