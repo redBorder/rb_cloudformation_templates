@@ -39,16 +39,25 @@
 	},
 
 	"Parameters" : {
-		"AMI" : {
-			"Description" : "redBorder AMI ID to deploy", 
+		"AMIType" : {
+			"Description" : "(REQUIRED) redBorder AMI type to deploy",
+			"Type" : "String",
+			"AllowedValues" : [ "cloud", "enterprise", "cisco" ],
+			"Default" : "enterprise",
+			"ConstraintDescription" : "type must be cloud, enterprise or cisco"
+		},
+		"AMIVersion" : {
+			"Description" : "(OPTIONAL) redBorder AMI version to deploy. Latest version will be used if it isn't specified. Example: 3.1.68-5",
 			"Type" : "String"
 		},
-		"AMIOpenVPN" : {
-			"Description" : "openvpn for redBorder AMI to deploy. Keep empty to avoid openvpn usage",
-			"Type" : "String"
+		"CreateOpenVPNInstance" : {
+			"Description" : "(REQUIRED) Indicates if you want VPN access to public and private subnets",
+			"Type" : "String",
+			"AllowedValues" : [ "true", "false" ],
+			"Default" : "false"
 		},
 		"NumberOfNodes" : {
-			"Description" : "number of nodes for redBorder cluster. Roles will be configured automatically",
+			"Description" : "(REQUIRED) number of nodes for redBorder cluster. Roles will be configured automatically",
 			"Type" : "Number",
 			"MinValue" : "1",
 			"MaxValue" : "20",
@@ -56,36 +65,36 @@
 			"ConstraintDescription" : "number of nodes must between 1 and 20"
 		},
 		"InstanceSize" : {
-			"Description" : "performance of each node (instance types). Instance types will be choosen automatically in function of this parameter",
+			"Description" : "(REQUIRED) Node performance (instance types). Instance types will be choosen automatically in function of this parameter",
 			"Type" : "String",
 			"AllowedValues" : [ "small", "medium", "large" ],
 			"Default" : "medium"
 		}, 
 		"KeyName" : {
-			"Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+			"Description" : "(REQUIRED) Name of an existing EC2 KeyPair to enable SSH access to the instances",
 			"Type" : "AWS::EC2::KeyPair::KeyName",
 			"ConstraintDescription" : "must be the name of an existing AWS EC2 KeyPair"
 		},
 		"Email" : {
-			"Description" : "Email address to notify cloudwatch alarms",
+			"Description" : "(OPTIONAL) Email address to notify cloudwatch and autoscaling alarms",
 			"Type" : "String",
 			"AllowedPattern": "([a-zA-Z0-9_\\-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([a-zA-Z0-9\\-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)",
-      		"ConstraintDescription": "must be a valid email address."
+      		"ConstraintDescription": "must be a valid email address. "
 		},
 		"CDOMAIN" : {
-			"Description" : "DNS Domain for cluster",
+			"Description" : "(REQUIRED) DNS Domain for cluster",
 			"Type" : "String"			
 		},
 		"WebSSLCertificateName" : {
-			"Description" : "SSL Certificate for web load balancer",
+			"Description" : "(REQUIRED) SSL certificate name for web load balancer",
 			"Type" : "String"
 		},
 		"DataSSLCertificateName" : {
-			"Description" : "SSL Certificate for data load balancer",
+			"Description" : "(REQUIRED) SSL certificate name for data load balancer",
 			"Type" : "String"
 		},
 		"openVPNAdminPasswd" : {
-			"Description" : "Password for administrator access to OpenVPN server (with user redborder). Only necessary if an openvpn ami is specified",
+			"Description" : "(CONDITIONAL) Password for administrator access to OpenVPN server (with user redborder). Only necessary if openvpn will be used",
 			"Type" : "String",
 			"NoEcho" : "true",
 			"MinLength" : "0",
@@ -93,7 +102,7 @@
 			"ConstraintDescription" : "must contain only alphanumeric characters and must have a minium of 8 characters and a maximum of 41"		
 		},
 		"PreviousS3Bucket" : {
-			"Description" : "S3 Bucket from a previous installation, for restore. Keep empty to avoid restore and create new bucket",
+			"Description" : "(OPTIONAL) S3 Bucket from a previous installation, for restore. Keep empty to avoid restore and create a new bucket",
 			"Type" : "String"
 		}
 	},
