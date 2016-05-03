@@ -3,199 +3,507 @@
 
 	"Description" : "AWS CloudFormation template to deploy redBorder Horama Manager",
 
+	"Metadata" : {
+		"AWS::CloudFormation::Interface" : {
+			"ParameterGroups" : [ {
+				"Label" : { "default" : "EC2 Configuration" },
+				"Parameters" : [ "AMIType", "AMIVersion", "KeyName", "CreateInternalLoadBalancers" ]
+			}, {
+				"Label" : { "default" : "Domain and certificates" },
+				"Parameters" : [ "CDOMAIN", "WebSSLCertificateName", "DataSSLCertificateName" ]
+			}, {
+				"Label" : { "default" : "Roles Configuration" },
+				"Parameters" : [	"CorezkInstanceType", "CorezkEBSSize", "CorezkInstances",
+								 	"KafkaInstanceType", "KafkaEBSSize", "MinKafkaInstances",
+									"WebInstanceType", "WebEBSSize", "MinWebInstances",
+									"Http2kInstanceType", "Http2kEBSSize", "MinHttp2kInstances",
+									"MiddlemanagerInstanceType", "MiddlemanagerEBSSize", "MinMiddlemanagerInstances",
+									"BrokerInstanceType", "BrokerEBSSize", "MinBrokerInstances",
+									"HistoricalInstanceType", "HistoricalEBSSize", "MinHistoricalInstances",
+									"HistoricalhotInstanceType", "HistoricalhotEBSSize", "MinHistoricalhotInstances",
+									"SamzaInstanceType", "SamzaEBSSize", "MinSamzaInstances",
+									"HistoricalGenericInstanceType", "HistoricalGenericEBSSize", "HistoricalGenericInstances"
+				]
+			}, {
+				"Label" : { "default" : "OpenVPN Configuration" },
+				"Parameters" : [ "CreateOpenVPNInstance", "openVPNAdminPasswd" ]
+			}, {
+				"Label" : { "default" : "Notifications" },
+				"Parameters" : [ "Email" ]
+			}, {
+				"Label" : { "default" : "Restoration options" },
+				"Parameters" : [ "PreviousS3Bucket" ]
+			}, {
+				"Label" : { "default" : "External services" },
+				"Parameters" : [ "UseRDS", "RDSInstanceType", "DBPassword", "UseElasticache", "ElasticacheInstanceType" ]
+			}  ],
+			"ParameterLabels" : {
+				"AMIType" : { "default" : "redBorder AMI type" },
+				"AMIVersion" : { "default" : "redBorder AMI version" },
+				"KeyName" : { "default" : "Key Name" },
+				"CreateInternalLoadBalancers" : { "default" : "Create internal load balancers" },
+
+				"CDOMAIN" : { "default" : "Cluster Domain" },
+				"WebSSLCertificateName" : { "default" : "SSL certificate name for Web" },
+				"DataSSLCertificateName" : { "default" : "SSL certificate name for Data" },
+
+				"CorezkInstanceType" : { "default" : "Corezk - instance size" },
+				"CorezkEBSSize" : { "default" : "Corezk - EBS disk size" },
+				"CorezkInstances" : { "default" : "Corezk - number of instances" },
+
+				"KafkaInstanceType" : { "default" : "Kafka - instance size" },
+				"KafkaEBSSize" : { "default" : "Kafka - EBS disk size" },
+				"MinKafkaInstances" : { "default" : "Kafka - minimal number of instances" },
+
+				"WebInstanceType" : { "default" : "Web - instance size" },
+				"WebEBSSize" : { "default" : "Web - EBS disk size" },
+				"MinWebInstances" : { "default" : "Web - minimal number of instances" },
+
+				"Http2kInstanceType" : { "default" : "Http2k - instance size" },
+				"Http2kEBSSize" : { "default" : "Http2k - EBS disk size" },
+				"MinHttp2kInstances" : { "default" : "Http2k - minimal number of instances" },
+
+				"MiddlemanagerInstanceType" : { "default" : "Middlemanager - instance size" },
+				"MiddlemanagerEBSSize" : { "default" : "Middlemanager - EBS disk size" },
+				"MinMiddlemanagerInstances" : { "default" : "Middlemanager - minimal number of instances" },
+
+				"BrokerInstanceType" : { "default" : "Broker - instance size" },
+				"BrokerEBSSize" : { "default" : "Broker - EBS disk size" },
+				"MinBrokerInstances" : { "default" : "Broker - minimal number of instances" },
+
+				"SamzaInstanceType" : { "default" : "Samza - instance size" },
+				"SamzaEBSSize" : { "default" : "Samza - EBS disk size" },
+				"MinSamzaInstances" : { "default" : "Samza - minimal number of instances" },
+
+				"HistoricalInstanceType" : { "default" : "Historical - instance size" },
+				"HistoricalEBSSize" : { "default" : "Historical - EBS disk size" },
+				"MinHistoricalInstances" : { "default" : "Historical - minimal number of instances" },
+
+				"HistoricalhotInstanceType" : { "default" : "Historical Hot - instance size" },
+				"HistoricalhotEBSSize" : { "default" : "Historical Hot - EBS disk size" },
+				"MinHistoricalhotInstances" : { "default" : "Historical Hot - minimal number of instances" },
+
+				"HistoricalGenericInstanceType" : { "default" : "Historical Generic - instance size" },
+				"HistoricalGenericEBSSize" : { "default" : "Historical Generic - EBS disk size" },
+				"HistoricalGenericInstances" : { "default" : "Historical Generic - minimal number of instances" },
+
+				"CreateOpenVPNInstance" : { "default" : "Create openvpn instance" },
+				"openVPNAdminPasswd" : { "default" : "Openvpn password for admin user" },
+
+				"Email" : { "default" : "Notification email" },
+
+				"PreviousS3Bucket" : { "default" : "S3 Bucket of the previous cluster" },
+
+				"UseRDS" : { "default" : "Use AWS RDS database" },
+				"RDSInstanceType" : { "default" : "RDS - instance type" },
+				"DBPassword" : { "default" : "RDS - admin password" },
+				"UseElasticache" : { "default" : "Use AWS Elasticache" },
+				"ElasticacheInstanceType" : { "default" : "Elasticache - instance type" }
+			}
+		}
+	},
+
 	"Parameters" : {
-		"AMI" : {
-			"Description" : "redBorder AMI ID to deploy", 
-			"Type" : "String"
-		}, 
-		"AMIOpenVPN" : {
-			"Description" : "openvpn for redBorder AMI to deploy",
-			"Type" : "String"
-		},
-		"MinCorezkInstances" : {
-			"Description" : "minimun number of nodes for corezk role.",
-			"Type" : "Number",
-			"MinValue" : "1",
-			"MaxValue" : "10",
-			"Default" : "1",
-			"ConstraintDescription" : "number of nodes must between 1 and 10"
-		},
-		"MinKafkaInstances" : {
-			"Description" : "minimun number of nodes for kafka role.",
-			"Type" : "Number",
-			"MinValue" : "0",
-			"MaxValue" : "10",
-			"Default" : "1",
-			"ConstraintDescription" : "number of nodes must between 1 and 10"
-		},
-		"MinWebInstances" : {
-			"Description" : "minimun number of nodes for web role.",
-			"Type" : "Number",
-			"MinValue" : "0",
-			"MaxValue" : "10",
-			"Default" : "1",
-			"ConstraintDescription" : "number of nodes must between 1 and 10"
-		},
-		"MinHttp2kInstances" : {
-			"Description" : "minimun number of nodes for http2k role.",
-			"Type" : "Number",
-			"MinValue" : "0",
-			"MaxValue" : "10",
-			"Default" : "1",
-			"ConstraintDescription" : "number of nodes must between 0 and 10"
-		},
-		"MinMiddlemanagerInstances" : {
-			"Description" : "minimun number of nodes for broker role.",
-			"Type" : "Number",
-			"MinValue" : "0",
-			"MaxValue" : "10",
-			"Default" : "1",
-			"ConstraintDescription" : "number of nodes must between 1 and 10"
-		},
-		"MinBrokerInstances" : {
-			"Description" : "minimun number of nodes for broker role.",
-			"Type" : "Number",
-			"MinValue" : "0",
-			"MaxValue" : "10",
-			"Default" : "1",
-			"ConstraintDescription" : "number of nodes must between 1 and 10"
-		},
-		"MinHistoricalInstances" : {
-			"Description" : "minimun number of nodes for historical role.",
-			"Type" : "Number",
-			"MinValue" : "0",
-			"MaxValue" : "10",
-			"Default" : "1",
-			"ConstraintDescription" : "number of nodes must between 1 and 10"
-		},
-		"MinHistoricalhotInstances" : {
-			"Description" : "minimun number of nodes for historicalhot role.",
-			"Type" : "Number",
-			"MinValue" : "0",
-			"MaxValue" : "10",
-			"Default" : "1",
-			"ConstraintDescription" : "number of nodes must between 1 and 10"
-		},
-		"MinSamzaInstances" : {
-			"Description" : "minimun number of nodes for samza role.",
-			"Type" : "Number",
-			"MinValue" : "0",
-			"MaxValue" : "10",
-			"Default" : "1",
-			"ConstraintDescription" : "number of nodes must between 1 and 10"
-		},
-		"MinDatanodeInstances" : {
-			"Description" : "minimun number of nodes for datanode role.",
-			"Type" : "Number",
-			"MinValue" : "0",
-			"MaxValue" : "10",
-			"Default" : "0",
-			"ConstraintDescription" : "number of nodes must between 1 and 10"
-		},
-		"HistoricalGenericInstances" : {
-			"Description" : "number of nodes for historialGeneric role.",
-			"Type" : "Number",
-			"MinValue" : "0",
-			"MaxValue" : "10",
-			"Default" : "0",
-			"ConstraintDescription" : "number of nodes must between 0 and 10"
-		},
-		"InstanceSize" : {
-			"Description" : "performance of each node (instance types). Instance types will be choosen automatically in function of this parameter",
+
+		"AMIType" : {
+			"Description" : "(REQUIRED) redBorder AMI type to deploy",
 			"Type" : "String",
-			"AllowedValues" : [ "small", "medium", "large" ],
-			"Default" : "small"
-		}, 
+			"AllowedValues" : [ "cloud", "enterprise", "cisco" ],
+			"Default" : "enterprise",
+			"ConstraintDescription" : "type must be cloud, enterprise or cisco"
+		},
+		"AMIVersion" : {
+			"Description" : "(OPTIONAL) redBorder AMI version to deploy. You can use an AMI ID or a redBorder version number (Example: 3.1.68-5). Latest version will be used if it isn't specified",
+			"Type" : "String"
+		},
 		"KeyName" : {
-			"Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+			"Description" : "(REQUIRED) Name of an existing EC2 KeyPair to enable SSH access to the instances",
 			"Type" : "AWS::EC2::KeyPair::KeyName",
 			"ConstraintDescription" : "must be the name of an existing AWS EC2 KeyPair"
 		},
-		"Email" : {
-			"Description" : "Email address to notify cloudwatch alarms",
-			"Type" : "String",
-			"AllowedPattern": "([a-zA-Z0-9_\\-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([a-zA-Z0-9\\-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)",
-      		"ConstraintDescription": "must be a valid email address."
-		},
-		"CDOMAIN" : {
-			"Description" : "DNS Domain for cluster",
-			"Type" : "String", 
-			"Default" : "redbordercloud.com"
-		},
-		"WebSSLCertificateName" : {
-			"Description" : "SSL Certificate for web load balancer",
-			"Type" : "String"
-		},
-		"DataSSLCertificateName" : {
-			"Description" : "SSL Certificate for data load balancer",
-			"Type" : "String"
-		},
-		"UseRDS" : {
-			"Description" : "Indicates if you want to use AWS Relational Database Service for PostgreSQL or you prefer to use PostgreSQL provided by redBorder",
-			"Type" : "String",
-			"AllowedValues" : [ "true", "false" ],
-			"Default" : "false"
-		},
-		"UseElasticache" : {
-			"Description" : "Indicates if you want to use AWS Elasticache for Memcached or you prefer to use Memcached provided by redBorder",
-			"Type" : "String",
-			"AllowedValues" : [ "true", "false" ],
-			"Default" : "false"
-		},
 		"CreateInternalLoadBalancers" : {
-			"Description" : "Indicates if you want internal load balancers (only for cisco environments)",
+			"Description" : "(REQUIRED) Indicates if you want internal load balancers. If not, secondary ips will be used.",
 			"Type" : "String",
 			"AllowedValues" : [ "true", "false" ],
 			"Default" : "true"
 		},
+
+		"CDOMAIN" : {
+			"Description" : "(REQUIRED) DNS Domain for cluster",
+			"Type" : "String",
+			"Default" : ""
+		},
+		"WebSSLCertificateName" : {
+			"Description" : "(REQUIRED) SSL certificate name for web load balancer",
+			"Type" : "String"
+		},
+		"DataSSLCertificateName" : {
+			"Description" : "(REQUIRED) SSL certificate name for data load balancer",
+			"Type" : "String"
+		},
+
+		"CorezkInstanceType" : {
+			"Description" : "(REQUIRED) instance type for corezk role",
+			"Type" : "String",
+			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+								"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
+								"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
+								"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
+								"r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge"
+			],
+			"Default" : "m4.xlarge",
+			"ConstraintDescription" : "must be an allowed instance type"
+		},
+		"CorezkEBSSize" : {
+			"Description" : "(REQUIRED) EBS Volume (SSD) size in GB for corezk instances",
+			"Type" : "Number",
+			"MinValue" : "12",
+			"MaxValue" : "16384",
+			"Default" : "50",
+			"ConstraintDescription" : "size must be between 12 and 16384 GB"
+		},
+		"CorezkInstances" : {
+			"Description" : "(REQUIRED) minimun number of nodes for corezk role",
+			"Type" : "String",
+			"AllowedValues" : [ "1", "3", "5", "7" ],
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes for corezk role must be odd and not greater than 7"
+		},
+
+		"KafkaInstanceType" : {
+			"Description" : "(REQUIRED) instance type for kafka role",
+			"Type" : "String",
+			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
+				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
+				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
+				"r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge"
+			],
+			"Default" : "i2.xlarge",
+			"ConstraintDescription" : "must be an allowed instance type"
+		},
+		"KafkaEBSSize" : {
+			"Description" : "(REQUIRED) EBS Volume (SSD) size in GB for kafka instances",
+			"Type" : "Number",
+			"MinValue" : "12",
+			"MaxValue" : "16384",
+			"Default" : "50",
+			"ConstraintDescription" : "size must be between 12 and 16384 GB"
+		},
+		"MinKafkaInstances" : {
+			"Description" : "(REQUIRED) minimun number of nodes for kafka role.",
+			"Type" : "Number",
+			"MinValue" : "0",
+			"MaxValue" : "10",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 0 and 10"
+		},
+
+		"WebInstanceType" : {
+			"Description" : "(REQUIRED) instance type for web role",
+			"Type" : "String",
+			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
+				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
+				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
+				"r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge"
+			],
+			"Default" : "c4.xlarge",
+			"ConstraintDescription" : "must be an allowed instance type"
+		},
+		"WebEBSSize" : {
+			"Description" : "(REQUIRED) EBS Volume (SSD) size in GB for web instances",
+			"Type" : "Number",
+			"MinValue" : "12",
+			"MaxValue" : "16384",
+			"Default" : "12",
+			"ConstraintDescription" : "size must be between 12 and 16384 GB"
+		},
+		"MinWebInstances" : {
+			"Description" : "(REQUIRED) minimun number of nodes for web role.",
+			"Type" : "Number",
+			"MinValue" : "0",
+			"MaxValue" : "10",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 0 and 10"
+		},
+
+		"Http2kInstanceType" : {
+			"Description" : "(REQUIRED) instance type for http2k role",
+			"Type" : "String",
+			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
+				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
+				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
+				"r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge"
+			],
+			"Default" : "c4.large",
+			"ConstraintDescription" : "must be an allowed instance type"
+		},
+		"Http2kEBSSize" : {
+			"Description" : "(REQUIRED) EBS Volume (SSD) size in GB for http2k instances",
+			"Type" : "Number",
+			"MinValue" : "12",
+			"MaxValue" : "16384",
+			"Default" : "12",
+			"ConstraintDescription" : "size must be between 12 and 16384 GB"
+		},
+		"MinHttp2kInstances" : {
+			"Description" : "(REQUIRED) minimun number of nodes for http2k role.",
+			"Type" : "Number",
+			"MinValue" : "0",
+			"MaxValue" : "10",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 0 and 10"
+
+		},
+
+		"MiddlemanagerInstanceType" : {
+			"Description" : "(REQUIRED) instance type for middleManager role",
+			"Type" : "String",
+			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
+				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
+				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
+				"r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge"
+			],
+			"Default" : "r3.xlarge",
+			"ConstraintDescription" : "must be an allowed instance type"
+		},
+		"MiddlemanagerEBSSize" : {
+			"Description" : "(REQUIRED) EBS Volume (SSD) size in GB for middleManager instances",
+			"Type" : "Number",
+			"MinValue" : "12",
+			"MaxValue" : "16384",
+			"Default" : "50",
+			"ConstraintDescription" : "size must be between 12 and 16384 GB"
+		},
+		"MinMiddlemanagerInstances" : {
+			"Description" : "(REQUIRED) minimun number of nodes for middleManager role.",
+			"Type" : "Number",
+			"MinValue" : "0",
+			"MaxValue" : "10",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 1 and 10"
+		},
+
+		"BrokerInstanceType" : {
+			"Description" : "(REQUIRED) instance type for broker role",
+			"Type" : "String",
+			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
+				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
+				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
+				"r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge"
+			],
+			"Default" : "r3.xlarge",
+			"ConstraintDescription" : "must be an allowed instance type"
+		},
+		"BrokerEBSSize" : {
+			"Description" : "(REQUIRED) EBS Volume (SSD) size in GB for broker instances",
+			"Type" : "Number",
+			"MinValue" : "12",
+			"MaxValue" : "16384",
+			"Default" : "50",
+			"ConstraintDescription" : "size must be between 12 and 16384 GB"
+		},
+		"MinBrokerInstances" : {
+			"Description" : "(REQUIRED) minimun number of nodes for broker role.",
+			"Type" : "Number",
+			"MinValue" : "0",
+			"MaxValue" : "10",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 1 and 10"
+		},
+
+		"HistoricalInstanceType" : {
+			"Description" : "(REQUIRED) instance type for historical role",
+			"Type" : "String",
+			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
+				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
+				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
+				"r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge"
+			],
+			"Default" : "c4.2xlarge",
+			"ConstraintDescription" : "must be an allowed instance type"
+		},
+		"HistoricalEBSSize" : {
+			"Description" : "(REQUIRED) EBS Volume (SSD) size in GB for historical instances",
+			"Type" : "Number",
+			"MinValue" : "12",
+			"MaxValue" : "16384",
+			"Default" : "500",
+			"ConstraintDescription" : "size must be between 12 and 16384 GB"
+		},
+		"MinHistoricalInstances" : {
+			"Description" : "(REQUIRED) minimun number of nodes for historical role.",
+			"Type" : "Number",
+			"MinValue" : "0",
+			"MaxValue" : "10",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 1 and 10"
+		},
+
+		"HistoricalhotInstanceType" : {
+			"Description" : "(REQUIRED) instance type for historical hot role",
+			"Type" : "String",
+			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
+				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
+				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
+				"r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge"
+			],
+			"Default" : "r3.xlarge",
+			"ConstraintDescription" : "must be an allowed instance type"
+		},
+		"HistoricalhotEBSSize" : {
+			"Description" : "(REQUIRED) EBS Volume (SSD) size in GB for historical hot instances",
+			"Type" : "Number",
+			"MinValue" : "12",
+			"MaxValue" : "16384",
+			"Default" : "50",
+			"ConstraintDescription" : "size must be between 12 and 16384 GB"
+		},
+		"MinHistoricalhotInstances" : {
+			"Description" : "(REQUIRED) minimun number of nodes for historicalhot role.",
+			"Type" : "Number",
+			"MinValue" : "0",
+			"MaxValue" : "10",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 1 and 10"
+		},
+
+		"SamzaInstanceType" : {
+			"Description" : "(REQUIRED) instance type for samza role",
+			"Type" : "String",
+			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
+				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
+				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
+				"r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge"
+			],
+			"Default" : "c4.2xlarge",
+			"ConstraintDescription" : "must be an allowed instance type"
+		},
+		"SamzaEBSSize" : {
+			"Description" : "(REQUIRED) EBS Volume (SSD) size in GB for samza instances",
+			"Type" : "Number",
+			"MinValue" : "12",
+			"MaxValue" : "16384",
+			"Default" : "50",
+			"ConstraintDescription" : "size must be between 12 and 16384 GB"
+		},
+		"MinSamzaInstances" : {
+			"Description" : "(REQUIRED) minimun number of nodes for samza role.",
+			"Type" : "Number",
+			"MinValue" : "0",
+			"MaxValue" : "10",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 1 and 10"
+		},
+
+		"HistoricalGenericInstanceType" : {
+			"Description" : "(REQUIRED) instance type for HistoricalGeneric role",
+			"Type" : "String",
+			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
+				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
+				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
+				"r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge"
+			],
+			"Default" : "c4.2xlarge",
+			"ConstraintDescription" : "must be an allowed instance type"
+		},
+		"HistoricalGenericEBSSize" : {
+			"Description" : "(REQUIRED) EBS Volume (SSD) size in GB for historical generic instances",
+			"Type" : "Number",
+			"MinValue" : "12",
+			"MaxValue" : "16384",
+			"Default" : "500",
+			"ConstraintDescription" : "size must be between 12 and 16384 GB"
+		},
+		"HistoricalGenericInstances" : {
+			"Description" : "(REQUIRED) number of nodes for historialGeneric role.",
+			"Type" : "Number",
+			"MinValue" : "0",
+			"MaxValue" : "10",
+			"Default" : "0",
+			"ConstraintDescription" : "number of nodes must between 0 and 10"
+		},
+
 		"CreateOpenVPNInstance" : {
-			"Description" : "Indicates if you want VPN access to public and private subnets",
+			"Description" : "(REQUIRED) Indicates if you want VPN access to public and private subnets",
 			"Type" : "String",
 			"AllowedValues" : [ "true", "false" ],
 			"Default" : "false"
 		},
 		"openVPNAdminPasswd" : {
-			"Description" : "Password for administrator access to OpenVPN server (with user redborder)",
+			"Description" : "(CONDITIONAL) Password for administrator access to OpenVPN server (with user redborder). Only necessary if openvpn will be used",
 			"Type" : "String",
 			"NoEcho" : "true",
 			"MinLength" : "0",
 			"MaxLength"	: "41",
-			"ConstraintDescription" : "must contain only alphanumeric characters and must have a minium of 8 characters and a maximum of 41"		
+			"ConstraintDescription" : "must contain only alphanumeric characters and must have a minium of 8 characters and a maximum of 41"
+		},
+
+		"Email" : {
+			"Description" : "(OPTIONAL) Email address to notify cloudwatch alarms",
+			"Type" : "String",
+			"AllowedPattern": "([a-zA-Z0-9_\\-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([a-zA-Z0-9\\-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)",
+      		"ConstraintDescription": "must be a valid email address."
+		},
+
+		"PreviousS3Bucket" : {
+			"Description" : "(OPTIONAL) S3 Bucket from a previous installation, for restore. Keep empty to avoid restore and create a new bucket",
+			"Type" : "String"
+		},
+
+		"UseRDS" : {
+			"Description" : "(REQUIRED) Indicates if you want to use AWS Relational Database Service for PostgreSQL. If not, redBorder database will be used",
+			"Type" : "String",
+			"AllowedValues" : [ "true", "false" ],
+			"Default" : "false"
+		},
+		"RDSInstanceType" : {
+			"Description" : "(CONDITIONAL) Indicates instance size for RDS Database. Only necessary if you choose to use RDS database",
+			"Type" : "String",
+			"AllowedValues" : [ "db.m4.large", "db.m4.xlarge", "db.m4.2xlarge", "db.m4.4xlarge", "db.m4.10xlarge",
+								"db.m3.medium", "db.m3.large", "db.m3.xlarge", "db.m3.2xlarge",
+								"db.r3.large", "db.r3.xlarge", "db.r3.2xlarge", "db.r3.4xlarge", "db.r3.8xlarge",
+								"db.t2.micro", "db.t2.small", "db.t2.medium", "db.t2.large"
+			],
+			"Default" : "db.m4.large",
+			"ConstraintDescription" : "must be an allowed instance type"
 		},
 		"DBPassword": {
 			"NoEcho": "true",
-			"Description" : "The database admin account password",
-			"Default" : "AWSrdsForredBorder", 
+			"Description" : "(CONDITIONAL) Password for administrator user of RDS database. Only necessary if you choose to use RDS database",
+			"Default" : "",
 			"Type": "String",
 			"MinLength": "0",
 			"MaxLength": "41",
 			"AllowedPattern" : "[a-zA-Z0-9]*",
 			"ConstraintDescription" : "must contain only alphanumeric characters and must have a minium of 8 characters and a maximum of 41"
 		},
-		"PreviousS3Bucket" : {
-			"Description" : "S3 Bucket from a previous installation, for restore. Keep empty to avoid restore and create new bucket",
-			"Type" : "String"
-		}
-	},
 
-	"Mappings" : {
-		"InstanceTypeMap" : {
-			"master" :            { "small":"m4.xlarge",      "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
-			"custom" :            { "small":"m4.large",       "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
-			"corezk" :            { "small":"m4.xlarge",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
-			"kafka" :             { "small":"i2.xlarge",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
-			"http2k" :            { "small":"c4.large",       "medium":"c4.large",        "large":"c4.2xlarge"       },
-			"web" :               { "small":"c4.xlarge",      "medium":"c4.xlarge",       "large":"c4.4xlarge"       },
-			"broker" :            { "small":"r3.xlarge",      "medium":"r3.xlarge",       "large":"r3.2xlarge"       },
-			"middlemanager" :     { "small":"r3.xlarge",      "medium":"r3.2xlarge",      "large":"r3.8xlarge"       },
-			"historical" :        { "small":"c4.2xlarge",     "medium":"c4.2xlarge",      "large":"c4.8xlarge"       },
-			"historicalhot" :     { "small":"r3.xlarge",      "medium":"r3.xlarge",       "large":"m4.10xlarge"      },
-			"historicalGeneric" : { "small":"r3.xlarge",      "medium":"r3.xlarge",       "large":"m4.10xlarge"      },
-			"samza" :             { "small":"c4.2xlarge",     "medium":"c4.4xlarge",      "large":"c4.8xlarge"       },
-			"datanode" :          { "small":"m4.xlarge",      "medium":"m4.xlarge",       "large":"m4.2xlarge"       },
-			"rds" :               { "small":"db.m3.large",    "medium":"db.m3.2xlarge",   "large":"db.r3.large"      },
-			"memcached" :         { "small":"cache.t2.small", "medium":"cache.m3.xlarge", "large":"cache.m3.2xlarge" }
+		"UseElasticache" : {
+			"Description" : "(REQUIRED) Indicates if you want to use AWS Elasticache for Memcached or you prefer to use Memcached provided by redBorder",
+			"Type" : "String",
+			"AllowedValues" : [ "true", "false" ],
+			"Default" : "false"
+		},
+		"ElasticacheInstanceType" : {
+			"Description" : "(CONDITIONAL) Indicates instance size for Elasticache nodes. Only necessary if you choose to use Elasticache",
+			"Type" : "String",
+			"AllowedValues" : [ "cache.t2.micro", "cache.t2.small", "cache.t2.medium",
+								"cache.m3.medium", "cache.m3.large", "cache.m3.xlarge", "cache.m3.2xlarge",
+								"cache.r3.large", "cache.r3.xlarge", "cache.r3.2xlarge", "cache.r3.4xlarge", "cache.r3.8xlarge"
+			],
+			"Default" : "cache.t2.small",
+			"ConstraintDescription" : "must be an allowed instance type"
 		}
+
 	},
 
 	"Conditions" : {		
@@ -560,7 +868,7 @@
 			"Condition" : "RDSCreation",
 			"Properties" : {
 				"AllocatedStorage" : "50",
-				"DBInstanceClass" : { "Fn::FindInMap" : [ "InstanceTypeMap", "rds", { "Ref" : "InstanceSize" } ] },
+				"DBInstanceClass" : { "Ref" : "RDSInstanceType"},
 				"Engine" : "postgres",
 				"DBName" : "redborderRDS",
 				"MasterUsername" : "rdsredborder",
@@ -588,7 +896,7 @@
 				"Engine" : "memcached", 
 				"PreferredAvailabilityZone" : { "Fn::GetAtt" : [ "PrivateSubnet", "AvailabilityZone" ] },
 				"NumCacheNodes" : "1",
-				"CacheNodeType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "memcached", { "Ref" : "InstanceSize" } ] }, 
+				"CacheNodeType" : { "Ref" : "ElasticacheInstanceType" },
 				"CacheSubnetGroupName" : { "Ref" : "MemcachedSubnetGroup" },
 				"VpcSecurityGroupIds" : [ { "Ref" : "MemcachedSecurityGroup" } ]
 			}
@@ -1027,8 +1335,8 @@
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "corezkLaunch" },
 				"LoadBalancerNames" : { "Fn::If" : [ "InternalLoadBalancerCreation", [ { "Ref" : "CoreElasticLoadBalancer" } ], { "Ref" : "AWS::NoValue" } ] },
-				"MinSize" : { "Ref" : "MinCorezkInstances" },
-				"MaxSize" : "10",
+				"MinSize" : { "Ref" : "CorezkInstances" },
+				"MaxSize" : { "Ref" : "CorezkEBSSize"},
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_TERMINATE",
@@ -1052,7 +1360,7 @@
 			},
 			"CreationPolicy" : {
 				"ResourceSignal" : {
-					"Count" : { "Ref" : "MinCorezkInstances" },
+					"Count" : { "Ref" : "CorezkInstances" },
 					"Timeout" : "PT200M"
 				}
 			}
@@ -1061,10 +1369,10 @@
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Ref" : "AMI" },
+				"ImageId" : { "Fn::GetAtt": [ "redBorderAMILookUpInfo", "Id" ] },
 				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
-				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "corezk", { "Ref" : "InstanceSize" } ] },
+				"InstanceType" : { "Ref" : "CorezkInstanceType" },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
 				"InstanceMonitoring" : "true", 
 				"BlockDeviceMappings" : [ {
@@ -1159,7 +1467,7 @@
 				"LaunchConfigurationName" : { "Ref" : "kafkaLaunch" },
 				"LoadBalancerNames" : { "Fn::If" : [ "InternalLoadBalancerCreation", [ { "Ref" : "KafkaElasticLoadBalancer" } ], { "Ref" : "AWS::NoValue" } ] },
 				"MinSize" : { "Ref" : "MinKafkaInstances" },
-				"MaxSize" : "10",
+				"MaxSize" : { "Ref" : "KafkaEBSSize"},
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_TERMINATE",
@@ -1192,10 +1500,10 @@
 			"Condition" : "kafkaRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Ref" : "AMI" },
+				"ImageId" : { "Fn::GetAtt": [ "redBorderAMILookUpInfo", "Id" ] },
 				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
-				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "kafka", { "Ref" : "InstanceSize" } ] },
+				"InstanceType" : { "Ref" : "KafkaInstanceType" },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
 				"InstanceMonitoring" : "true", 
 				"BlockDeviceMappings" : [ {
@@ -1262,7 +1570,7 @@
 				"LoadBalancerNames" : [ { "Ref" : "DataElasticLoadBalancer" } ],
 				"LaunchConfigurationName" : { "Ref" : "http2kLaunch" },
 				"MinSize" : { "Ref" : "MinHttp2kInstances" },
-				"MaxSize" : "10",
+				"MaxSize" : { "Ref" : "Http2kEBSSize"},
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -1298,10 +1606,10 @@
 			"Condition" : "http2kRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Ref" : "AMI" },
+				"ImageId" : { "Fn::GetAtt": [ "redBorderAMILookUpInfo", "Id" ] },
 				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
-				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "http2k", { "Ref" : "InstanceSize" } ] },
+				"InstanceType" : { "Ref" : "Http2kInstanceType" },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
 				"InstanceMonitoring" : "true",
 				"BlockDeviceMappings" : [ {
@@ -1439,7 +1747,7 @@
 				"LaunchConfigurationName" : { "Ref" : "webLaunch" },
 				"LoadBalancerNames" : [ { "Ref" : "WebElasticLoadBalancer" } ],
 				"MinSize" : { "Ref" : "MinWebInstances" },
-				"MaxSize" : "10",
+				"MaxSize" : { "Ref" : "WebEBSSize"},
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -1474,10 +1782,10 @@
 			"Condition" : "webRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Ref" : "AMI" },
+				"ImageId" : { "Fn::GetAtt": [ "redBorderAMILookUpInfo", "Id" ] },
 				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
-				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "web", { "Ref" : "InstanceSize" } ] },
+				"InstanceType" : { "Ref" : "WebInstanceType" },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
 				"InstanceMonitoring" : "true",
 				"BlockDeviceMappings" : [ {
@@ -1616,7 +1924,7 @@
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "brokerLaunch" },
 				"MinSize" : { "Ref" : "MinBrokerInstances" },
-				"MaxSize" : "10",
+				"MaxSize" : { "Ref" : "BrokerEBSSize"},
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -1651,10 +1959,10 @@
 			"Condition" : "brokerRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Ref" : "AMI" },
+				"ImageId" : { "Fn::GetAtt": [ "redBorderAMILookUpInfo", "Id" ] },
 				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
-				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "broker", { "Ref" : "InstanceSize" } ] },
+				"InstanceType" : { "Ref" : "BrokerInstanceType" },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
 				"InstanceMonitoring" : "true", 
 				"BlockDeviceMappings" : [ {
@@ -1835,7 +2143,7 @@
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "middlemanagerLaunch" },
 				"MinSize" : { "Ref" : "MinMiddlemanagerInstances" },
-				"MaxSize" : "10",
+				"MaxSize" : { "Ref" : "MiddlemanagerEBSSize"},
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -1870,10 +2178,10 @@
 			"Condition" : "middlemanagerRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Ref" : "AMI" },
+				"ImageId" : { "Fn::GetAtt": [ "redBorderAMILookUpInfo", "Id" ] },
 				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
-				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "middlemanager", { "Ref" : "InstanceSize" } ] },
+				"InstanceType" : { "Ref" : "MiddlemanagerInstanceType" },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
 				"InstanceMonitoring" : "true", 
 				"BlockDeviceMappings" : [ {
@@ -2023,7 +2331,7 @@
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "historicalLaunch" },
 				"MinSize" : { "Ref" : "MinHistoricalInstances" },
-				"MaxSize" : "10",
+				"MaxSize" : { "Ref" : "HistoricalEBSSize"},
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -2058,10 +2366,10 @@
 			"Condition" : "historicalRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Ref" : "AMI" },
+				"ImageId" : { "Fn::GetAtt": [ "redBorderAMILookUpInfo", "Id" ] },
 				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
-				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "historical", { "Ref" : "InstanceSize" } ] },
+				"InstanceType" : { "Ref" : "HistoricalInstanceType" },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
 				"InstanceMonitoring" : "true", 
 				"BlockDeviceMappings" : [ {
@@ -2201,7 +2509,7 @@
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "historicalhotLaunch" },
 				"MinSize" : { "Ref" : "MinHistoricalhotInstances" },
-				"MaxSize" : "10",
+				"MaxSize" : { "Ref" : "HistoricalhotEBSSize"},
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -2236,10 +2544,10 @@
 			"Condition" : "historicalhotRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Ref" : "AMI" },
+				"ImageId" : { "Fn::GetAtt": [ "redBorderAMILookUpInfo", "Id" ] },
 				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
-				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "historicalhot", { "Ref" : "InstanceSize" } ] },
+				"InstanceType" : { "Ref" : "HistoricalhotInstanceType" },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
 				"InstanceMonitoring" : "true", 
 				"BlockDeviceMappings" : [ {
@@ -2386,7 +2694,7 @@
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "historicalGenericLaunch" },
 				"MinSize" : { "Ref" : "HistoricalGenericInstances" },
-				"MaxSize" : "10",
+				"MaxSize" : { "Ref" : "HistoricalGenericEBSSize"},
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -2421,10 +2729,10 @@
 			"Condition" : "historicalGenericRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Ref" : "AMI" },
+				"ImageId" : { "Fn::GetAtt": [ "redBorderAMILookUpInfo", "Id" ] },
 				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
-				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "historicalGeneric", { "Ref" : "InstanceSize" } ] },
+				"InstanceType" : { "Ref" : "HistoricalGenericInstanceType" },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
 				"InstanceMonitoring" : "true", 
 				"BlockDeviceMappings" : [ {
@@ -2496,7 +2804,7 @@
 				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
 				"LaunchConfigurationName" : { "Ref" : "samzaLaunch" },
 				"MinSize" : { "Ref" : "MinSamzaInstances" },
-				"MaxSize" : "10",
+				"MaxSize" : { "Ref" : "SamzaEBSSize"},
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -2531,10 +2839,10 @@
 			"Condition" : "samzaRoleCreation",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Ref" : "AMI" },
+				"ImageId" : { "Fn::GetAtt": [ "redBorderAMILookUpInfo", "Id" ] },
 				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
 				"KeyName"        : { "Ref" : "KeyName" },
-				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "samza", { "Ref" : "InstanceSize" } ] },
+				"InstanceType" : { "Ref" : "SamzaInstanceType" },
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
 				"InstanceMonitoring" : "true", 
 				"BlockDeviceMappings" : [ {
@@ -2591,107 +2899,12 @@
 			}
 		},
 
-		"datanodeGroup" : {
-			"Type" : "AWS::AutoScaling::AutoScalingGroup",
-			"DependsOn" : "kafkaGroup",
-			"Properties" : {
-				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
-				"LaunchConfigurationName" : { "Ref" : "datanodeLaunch" },
-				"MinSize" : { "Ref" : "MinDatanodeInstances" },
-				"MaxSize" : "10",
-				"NotificationConfiguration" : {
-					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
-					"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
-						"autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
-						"autoscaling:EC2_INSTANCE_TERMINATE",
-						"autoscaling:EC2_INSTANCE_TERMINATE_ERROR" ]
-				},
-				"Tags" : [ {
-					"Key" : "Role",
-					"Value" : "datanode",
-					"PropagateAtLaunch" : "true"
-				},{
-					"Key" : "Cluster",
-					"Value" : { "Ref" : "AWS::StackName" },
-					"PropagateAtLaunch" : "true"
-				},{
-					"Key" : "Name",
-					"Value" : { "Fn::Join" : [ "", [
-						{ "Ref" : "AWS::StackName" }, " - datanode" ] ] },
-					"PropagateAtLaunch" : "true"
-				} ]
-			},
-			"CreationPolicy" : {
-				"ResourceSignal" : {
-					"Count" : { "Ref" : "MinDatanodeInstances" },
-					"Timeout" : "PT200M"
-				}
-			}
-		},
-		"datanodeLaunch" : {
-			"Type" : "AWS::AutoScaling::LaunchConfiguration",
-			"Properties" : {
-				"AssociatePublicIpAddress" : "true",
-				"ImageId" : { "Ref" : "AMI" },
-				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
-				"KeyName"        : { "Ref" : "KeyName" },
-				"InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", "datanode", { "Ref" : "InstanceSize" } ] },
-				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
-				"InstanceMonitoring" : "true",
-				"BlockDeviceMappings" : [ {
-					"DeviceName" : "/dev/sda1",
-					"Ebs" : {
-						"VolumeSize" : "500",
-						"VolumeType" : "gp2",
-						"DeleteOnTermination" : "true"
-					}
-				},  {
-					"DeviceName" : "/dev/sdb",
-					"VirtualName" : "ephemeral0"
-				},  {
-					"DeviceName" : "/dev/sdc",
-					"VirtualName" : "ephemeral1"
-				} ],
-				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
-					"#!/bin/bash\n",
-					"NODEROLE=datanode\n",
-					"NODESERVICES=\n",
-					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
-					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n",
-					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n",
-					"REGION=", { "Ref" : "AWS::Region" }, "\n",
-					"VPCID=", { "Ref" : "VPC" }, "\n",
-					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
-					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
-					"AUTOSCALINGGROUPNAME=datanodeGroup\n",
-					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n",
-					"S3BUCKET=", { "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, " \n",
-					"S3HOST=s3.amazonaws.com\n",
-					"S3TYPE=aws\n",
-					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
-					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
-					"\n\n",
-					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
-					"{\n",
-					"  \"redBorder\" : {\n",
-					"    \"aws\" : {\n",
-					"      \"cloudwatch\" : \"true\"\n",
-					"    }\n",
-					"  }\n",
-					"}\n",
-					"_RBEOF2_\n",
-					". /opt/rb/bin/rb_set_aws_interface.sh",
-					"\n"
-				] ] } }
-			}
-		},
-
 		"openVPNInstance" : {
 			"Type" : "AWS::EC2::Instance",
 			"Condition" : "openVPNInstanceCreation",
 			"Properties" : {
 				"AvailabilityZone" : { "Fn::GetAtt" : [ "PublicSubnet", "AvailabilityZone" ] },
-				"ImageId" : { "Ref" : "AMIOpenVPN" },
+				"ImageId" : { "Fn::GetAtt": [ "openvpnAMILookUpInfo", "Id" ] },
 				"InstanceType" : "t2.micro",
 				"KeyName" : { "Ref" : "KeyName" },
 				"NetworkInterfaces": [ {
@@ -2737,6 +2950,140 @@
 				"InstanceId" : { "Ref" : "openVPNInstance" },
 				"NetworkInterfaceId" : { "Ref" : "privateInterfaceOpenVPN" }
 			}
+		},
+
+		"redBorderAMILookupLambdaRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [{
+						"Effect": "Allow",
+						"Principal": {"Service": ["lambda.amazonaws.com"]},
+						"Action": ["sts:AssumeRole"]
+					}]
+				},
+				"Path": "/",
+				"Policies": [{
+					"PolicyName": "root",
+					"PolicyDocument": {
+						"Version": "2012-10-17",
+						"Statement": [{
+							"Effect": "Allow",
+							"Action": ["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],
+							"Resource": "arn:aws:logs:*:*:*"
+						},
+							{
+								"Effect": "Allow",
+								"Action": ["ec2:DescribeImages"],
+								"Resource": "*"
+							}]
+					}
+				}]
+			}
+		},
+		"redBorderAMILookUpFunction": {
+			"Type": "AWS::Lambda::Function",
+			"Properties": {
+				"Code": {
+					"S3Bucket": { "Fn::Join" : [ "-", [ "rblambdafunctions", { "Ref" : "AWS::Region" } ] ] },
+					"S3Key": "rb_cfn_lookup_ami.zip"
+				},
+				"Handler": "index.handler",
+				"Runtime": "nodejs4.3",
+				"Timeout": "10",
+				"Role": { "Fn::GetAtt" : ["redBorderAMILookupLambdaRole", "Arn"] }
+			}
+		},
+		"redBorderAMILookUpInfo": {
+			"Type": "Custom::AMIInfo",
+			"Properties": {
+				"ServiceToken": { "Fn::GetAtt" : ["redBorderAMILookUpFunction", "Arn"] },
+				"Region": { "Ref": "AWS::Region" },
+				"Type": { "Ref" : "AMIType" },
+				"Version" : { "Ref" : "AMIVersion" }
+			}
+		},
+		"openvpnAMILookUpInfo": {
+			"Condition" : "openVPNInstanceCreation",
+			"Type": "Custom::AMIInfo",
+			"Properties": {
+				"ServiceToken": { "Fn::GetAtt" : ["redBorderAMILookUpFunction", "Arn"] },
+				"Region": { "Ref": "AWS::Region" },
+				"Type": "openvpn"
+			}
+		},
+		"route53cleanLambdaRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [{
+						"Effect": "Allow",
+						"Principal": {"Service": ["lambda.amazonaws.com"]},
+						"Action": ["sts:AssumeRole"]
+					}]
+				},
+				"Path": "/",
+				"Policies": [{
+					"PolicyName": "root",
+					"PolicyDocument": {
+						"Version": "2012-10-17",
+						"Statement": [{
+							"Effect": "Allow",
+							"Action": ["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],
+							"Resource": "arn:aws:logs:*:*:*"
+						},
+							{
+								"Effect": "Allow",
+								"Action": [
+									"route53:ListResourceRecordSets",
+									"route53:ChangeResourceRecordSets"
+								],
+								"Resource": "*"
+							}]
+					}
+				}]
+			}
+		},
+		"route53cleanFunction" : {
+			"Type" : "AWS::Lambda::Function",
+			"Properties" : {
+				"Code": {
+					"S3Bucket": { "Fn::Join" : [ "-", [ "rblambdafunctions", { "Ref" : "AWS::Region" } ] ] },
+					"S3Key": "rb_cfn_delete_route53_entries.zip"
+				},
+				"Handler": "index.handler",
+				"Runtime": "nodejs4.3",
+				"Timeout": "30",
+				"Role": { "Fn::GetAtt" : ["route53cleanLambdaRole", "Arn"] }
+			}
+		},
+		"route53cleanInfo": {
+			"Type": "Custom::AMIInfo",
+			"Properties": {
+				"ServiceToken": { "Fn::GetAtt" : [ "route53cleanFunction", "Arn" ] },
+				"PublicHostedZone": { "Ref": "PublicHostedZone" },
+				"PrivateHostedZone": { "Ref" : "PrivateHostedZone" }
+			}
+		}
+	},
+	"Outputs" : {
+		"redBorderAMIId" : {
+			"Description" : "redBorder AMI used",
+			"Value" : { "Fn::GetAtt": [ "redBorderAMILookUpInfo", "Id" ] }
+		},
+		"redBorderAMIName" : {
+			"Description" : "redBorder AMI used",
+			"Value" : { "Fn::GetAtt": [ "redBorderAMILookUpInfo", "Name" ] }
+		},
+		"openvpnAMIId" : {
+			"Description" : "openvpn AMI used",
+			"Value" : { "Fn::GetAtt": [ "openvpnAMILookUpInfo", "Id" ] }
+		},
+		"openvpnAMIName" : {
+			"Description" : "openvpn AMI used",
+			"Value" : { "Fn::GetAtt": [ "openvpnAMILookUpInfo", "NameId" ] }
 		}
 	}
 }
