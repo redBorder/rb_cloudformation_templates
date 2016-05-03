@@ -2817,9 +2817,17 @@
 			"Description" : "redBorder AMI used",
 			"Value" : { "Fn::GetAtt": [ "redBorderAMILookUpInfo", "Id" ] }
 		},
+		"redBorderAMIName" : {
+			"Description" : "redBorder AMI used",
+			"Value" : { "Fn::GetAtt": [ "redBorderAMILookUpInfo", "Name" ] }
+		},
 		"openvpnAMIId" : {
 			"Description" : "openvpn AMI used",
 			"Value" : { "Fn::GetAtt": [ "openvpnAMILookUpInfo", "Id" ] }
+		},
+		"openvpnAMIName" : {
+			"Description" : "openvpn AMI used",
+			"Value" : { "Fn::GetAtt": [ "openvpnAMILookUpInfo", "Name" ] }
 		}
 	}
 }
