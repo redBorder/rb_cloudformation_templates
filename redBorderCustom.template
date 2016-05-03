@@ -1,7 +1,7 @@
 {
 	"AWSTemplateFormatVersion" : "2010-09-09",
 
-	"Description" : "AWS CloudFormation template to deploy redBorder Horama Manager",
+	"Description" : "AWS CloudFormation template to deploy redBorder Manager",
 
 	"Metadata" : {
 		"AWS::CloudFormation::Interface" : {
