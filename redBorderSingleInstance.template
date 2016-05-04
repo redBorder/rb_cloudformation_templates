@@ -3,28 +3,78 @@
 
 	"Description" : "AWS CloudFormation template to deploy redBorder Manager",
 
+	"Metadata" : {
+		"AWS::CloudFormation::Interface" : {
+			"ParameterGroups" : [
+				{
+					"Label" : { "default" : "EC2 Configuration" },
+					"Parameters" : [ "AMI", "InstanceType", "DiskSize", "KeyName" ]
+				}, {
+					"Label" : { "default" : "Domain Configuration" },
+					"Parameters" : [ "CDOMAIN" ]
+				}, {
+					"Label" : { "default" : "VPC Configuration" },
+					"Parameters" : [ "VPCId", "PublicSubnetId", "PrivateSubnetId" ]
+				}, {
+					"Label" : { "default" : "Restoration" },
+					"Parameters" : [ "PreviousS3Bucket" ]
+				} ],
+			"ParameterLabels" : {
+				"AMI" : { "default" : "redBorder AMI ID" },
+				"InstanceType" : { "default" : "Instance Type" },
+				"DiskSize" : { "default" : "Disk Size" },
+				"KeyName" : { "default" : "SSH Keyname" },
+				"CDOMAIN" : { "default" : "Cluster Domain" },
+				"PreviousS3Bucket" : { "default" : "Previous S3 Bucket for restore" },
+				"VPCId" : { "default" : "VPC Id" },
+				"PublicSubnetId" : { "default" : "Public Subnet Id" },
+				"PrivateSubnetId" : { "default" : "Private Subnet Id" }
+			}
+		}
+	},
+
 	"Parameters" : {
 		"AMI" : {
-			"Description" : "redBorder AMI ID to deploy", 
+			"Description" : "(REQUIRED) redBorder AMI ID to deploy",
 			"Type" : "AWS::EC2::Image::Id"
 		},
 		"InstanceType" : {
-			"Description" : "performance of each node (instance types). Instance types will be choosen automatically in function of this parameter",
+			"Description" : "(REQUIRED) AWS instance type that will be used to deploy redBorder",
 			"Type" : "String",
 			"AllowedValues" : [ "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge" ],
-			"Default" : "m4.xlarge"
+			"Default" : "m4.4xlarge"
+		},
+		"DiskSize" : {
+			"Description" : "(REQUIRED) EBS Volume size (GB) for redBorder instance",
+			"Type" : "Number",
+			"MinValue" : "12",
+			"MaxValue" : "16384",
+			"Default" : "500",
+			"ConstraintDescription" : "must bee between 12 GB and 16 TB"
 		},
 		"KeyName" : {
-			"Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+			"Description" : "(REQUIRED) Name of an existing EC2 KeyPair to enable SSH access to the instances",
 			"Type" : "AWS::EC2::KeyPair::KeyName",
 			"ConstraintDescription" : "must be the name of an existing AWS EC2 KeyPair"
 		},
 		"CDOMAIN" : {
-			"Description" : "DNS Domain for cluster",
+			"Description" : "(REQUIRED) DNS Domain for cluster",
 			"Type" : "String"			
 		},
+		"VPCId" : {
+			"Description" : "(OPTIONAL) VPC Id in which create rB instance. If is not specified a new VPC will be created",
+			"Type" : "AWS::EC2::VPC::Id"
+		},
+		"PublicSubnetId" : {
+			"Description" : "(OPTIONAL) Public Subnet for instance external interface. If is not specified, a new subnet will be created",
+			"Type" : "AWS::EC2::Subnet::Id"
+		},
+		"PrivateSubnetId" : {
+			"Description" : "(OPTIONAL) Public Subnet for instance internal interface. If is not specified, a new subnet will be created",
+			"Type" : "AWS::EC2::Subnet::Id"
+		},
 		"PreviousS3Bucket" : {
-			"Description" : "S3 Bucket from a previous installation, for restore. Keep empty to avoid restore and create new bucket",
+			"Description" : "(OPTIONAL) S3 Bucket from a previous installation, for restore. Keep empty to avoid restore and create a new bucket",
 			"Type" : "String"
 		}
 	},
@@ -38,12 +88,23 @@
 		},
 		"Restore" : {
 			"Fn::Not" : [ { "Fn::Equals" : [ "", { "Ref" : "PreviousS3Bucket" } ] } ]
+		},
+		"CreateVPC" : {
+			"Fn::Equals" : [ "", { "Ref" : "VPCId" } ]
+		},
+		"CreatePublicSubnet" : {
+			"Fn::Equals" : [ "", { "Ref" : "PublicSubnetId" } ]
+		},
+		"CreatePrivateSubnet" : {
+			"Fn::Equals" : [ "", { "Ref" : "PublicSubnetId" } ]
 		}
 	},
 	
 	"Resources" : {
+
 		"VPC" : {
 			"Type" : "AWS::EC2::VPC",
+			"Condition" : "CreateVPC",
 			"Properties" : {
 				"CidrBlock" : "172.16.0.0/16",
 				"EnableDnsSupport" : "true",
@@ -54,8 +115,9 @@
 		},
 		"PublicSubnet" : {
 			"Type" : "AWS::EC2::Subnet",
+			"Condition" : "CreatePublicSubnet",
 			"Properties" : {
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"CidrBlock" : "172.16.1.0/24",
 				"AvailabilityZone" : { "Fn::Select" : [ 0, { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
 				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "PublicSubnet" ] ] } } ]
@@ -63,35 +125,40 @@
 		},
 		"PrivateSubnet" : {
 			"Type" : "AWS::EC2::Subnet",
+			"Condition" : "CreatePrivateSubnet",
 			"Properties" : {
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"CidrBlock" : "172.16.2.0/24",
-				"AvailabilityZone" : { "Fn::GetAtt" : [ "PublicSubnet", "AvailabilityZone" ] },
+				"AvailabilityZone" : { "Fn::Select" : [ 0, { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
 				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "PrivateSubnet" ] ] } } ]
 			}
 		},
 		"InternetGateway" : {
 			"Type" : "AWS::EC2::InternetGateway",
+			"Condition" : "CreateVPC",
 			"Properties" : {
 				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "InternetGateway" ] ] } } ]
 			}
 		},
 		"AttachGateway" : {
 			"Type" : "AWS::EC2::VPCGatewayAttachment",
+			"Condition" : "CreateVPC",
 			"Properties" : {
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"InternetGatewayId" : { "Ref" : "InternetGateway" }
 			}
 		},
 		"RouteTable" : {
 			"Type" : "AWS::EC2::RouteTable",
+			"Condition" : "CreateVPC",
 			"Properties" : {
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "RouteTable" ] ] } } ]
 			}
 		},
 		"Route" : {
 			"Type" : "AWS::EC2::Route",
+			"Condition" : "CreateVPC",
 			"DependsOn" : "AttachGateway",
 			"Properties" : {
 				"RouteTableId" : { "Ref" : "RouteTable" },
@@ -100,9 +167,10 @@
 			}
 		},
 		"PublicSubnetRouteTableAssociation" : {
+			"Condition" : "CreateVPC",
 			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
 			"Properties" : {
-				"SubnetId" : { "Ref" : "PublicSubnet" },
+				"SubnetId" : { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] },
 				"RouteTableId" : { "Ref" : "RouteTable" }
 			}
 		},
@@ -238,7 +306,7 @@
 			"Type" : "AWS::EC2::SecurityGroup",
 			"Properties" : {
 				"GroupDescription" : "Security group for redBorder bond0 interfaces (public interfaces)",
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"SecurityGroupIngress" : [ {
 					"IpProtocol" : "tcp",
 					"FromPort" : "22",
@@ -267,7 +335,7 @@
 			"Type" : "AWS::EC2::SecurityGroup",
 			"Properties" : {
 				"GroupDescription" : "Security group for redBorder bond1 interfaces (private interfaces)",
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"Tags" : [ {
 					"Key" : "Name",
 					"Value" : { "Fn::Join" : [ "", [
@@ -321,7 +389,7 @@
         "redBorderInstance" : {
             "Type" : "AWS::EC2::Instance",
 			"Properties" : {
-				"SubnetId" :  { "Ref": "PublicSubnet" },
+				"SubnetId" :  { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] },
 				"ImageId" : { "Ref" : "AMI" },
 				"KeyName"        : { "Ref" : "KeyName" },
 				"InstanceType"   : { "Ref" : "InstanceType" },
@@ -330,7 +398,7 @@
 				"BlockDeviceMappings" : [ {
 					"DeviceName" : "/dev/sda1",
 					"Ebs" : {
-						"VolumeSize" : "500",
+						"VolumeSize" : { "Ref" : "DiskSize" },
 						"VolumeType" : "gp2",
 						"DeleteOnTermination" : "true"
 					}
@@ -344,16 +412,16 @@
 				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
 					"#!/bin/bash\n",
 					"NODEROLE=master\n",
-					"MODULES=\"flow:true location:true ips:true monitor:true malware:false social:true\"\n",
-					"#NODESERVICES=\n",
+					"MODULES=\"flow:true location:true ips:false monitor:true malware:false social:true\"\n",
+					"NODESERVICES=\"hadoop_resourcemanager:1 hadoop_nodemanager:1 druid_overlord:1 druid_middleManager:1  \"\n",
 					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
 					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n",
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
-					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"VPCID=", { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] }, "\n",
 					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"LOGWATCHG=", { "Ref" : "AWS::StackName" }, "\n",
-					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n",
+					"SUBNET_ID=", { "Fn::If" : [ "CreatePrivateSubnet", { "Ref" : "PrivateSubnet"  }, { "Ref" : "PrivateSubnetId"} ] }, "\n",
 					"S3BUCKET=", { "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, " \n",
 					{ "Fn::If" : [ "Restore", "CRESTORE=1\n", "" ] },
 					{ "Fn::If" : [ "regionNVirginia",
@@ -367,7 +435,8 @@
 					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
 					"CHEF_AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKeyChef" }, "\"\n",
 					"CHEF_AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKeyChef", "SecretAccessKey" ] }, "\"\n",
-					"#ENRICHMODE=samza\n",
+					"ENRICHMODE=samza\n",
+					"CMDFINISH='rb_set_indexing_tasks.rb -m 1024 -p 250 -c 1 ; rb_samza.sh -e '\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -389,7 +458,7 @@
 		"privateInterface" : {
 			"Type" : "AWS::EC2::NetworkInterface",
 			"Properties" : {
-				"SubnetId" : { "Ref" : "PrivateSubnet" },
+				"SubnetId" : { "Fn::If" : [ "CreatePrivateSubnet", { "Ref" : "PrivateSubnet"  }, { "Ref" : "PrivateSubnetId"} ] },
 				"GroupSet" : [ { "Ref" : "redBorderPrivateSecurityGroup" } ]
 			}
 		},
@@ -407,7 +476,7 @@
 			"Type" : "AWS::EC2::EIP",
 			"Properties" : {
 				"InstanceId" : { "Ref" : "redBorderInstance" },
-				"Domain" : { "Ref" : "VPC" }
+				"Domain" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] }
 			}
 		}
 	}
