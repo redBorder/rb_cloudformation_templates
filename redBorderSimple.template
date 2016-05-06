@@ -648,12 +648,11 @@
 		},
 		"SNSNotificationTopic" : {
 			"Type" : "AWS::SNS::Topic",
-			"Condition" : "EnableNotifications",
 			"Properties" : {
-				"Subscription" : [ {
+				"Subscription" : { "Fn::If" : [ "EnableNotifications" , [ {
 					"Protocol" : "email",
 					"Endpoint" : { "Ref" : "Email" }
-				}]
+				} ], { "Ref" : "AWS::NoValue" } ] }
 			}
 		},
 
