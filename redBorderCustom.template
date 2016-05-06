@@ -450,7 +450,6 @@
 		"Email" : {
 			"Description" : "(OPTIONAL) Email address to notify cloudwatch alarms",
 			"Type" : "String",
-			"AllowedPattern": "([a-zA-Z0-9_\\-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([a-zA-Z0-9\\-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)",
       		"ConstraintDescription": "must be a valid email address."
 		},
 
@@ -554,6 +553,9 @@
 		},
 		"Restore" : {
 			"Fn::Not" : [ { "Fn::Equals" : [ "", { "Ref" : "PreviousS3Bucket" } ] } ]
+		},
+		"EnableNotifications" : {
+			"Fn::Not" : [ { "Fn::Equals" : [ "", { "Ref" : "Email" } ] } ]
 		}
 	},
 	
@@ -856,6 +858,7 @@
 		},
 		"SNSNotificationTopic" : {
 			"Type" : "AWS::SNS::Topic",
+			"Condition" : "EnableNotifications",
 			"Properties" : {
 				"Subscription" : [ {
 					"Protocol" : "email",
