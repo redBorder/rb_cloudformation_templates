@@ -132,12 +132,12 @@
 			"corezk" :        { "small":"m4.xlarge",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
 			"kafka" :         { "small":"i2.xlarge",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
 			"http2k" :        { "small":"c4.large",       "medium":"c4.large",        "large":"c4.2xlarge"       },
-			"web" :           { "small":"c4.xlarge",       "medium":"c4.xlarge",       "large":"c4.4xlarge"       },
-			"broker" :        { "small":"r3.xlarge",       "medium":"r3.xlarge",       "large":"r3.4xlarge"       },
-			"middlemanager" : { "small":"r3.xlarge",       "medium":"r3.2xlarge",      "large":"r3.8xlarge"       },
-			"historical" :    { "small":"c4.2xlarge",       "medium":"c4.2xlarge",      "large":"c4.8xlarge"       },
-			"historicalhot" : { "small":"r3.xlarge",       "medium":"r3.xlarge",       "large":"m4.10xlarge"      },
-			"samza" :         { "small":"c4.2xlarge",      "medium":"c4.4xlarge",      "large":"c4.8xlarge"       }
+			"web" :           { "small":"c4.xlarge",      "medium":"c4.xlarge",       "large":"c4.4xlarge"       },
+			"broker" :        { "small":"r3.xlarge",      "medium":"r3.xlarge",       "large":"r3.4xlarge"       },
+			"middlemanager" : { "small":"r3.xlarge",      "medium":"r3.2xlarge",      "large":"r3.8xlarge"       },
+			"historical" :    { "small":"c4.2xlarge",     "medium":"c4.2xlarge",      "large":"c4.8xlarge"       },
+			"historicalhot" : { "small":"r3.xlarge",      "medium":"r3.xlarge",       "large":"m4.10xlarge"      },
+			"samza" :         { "small":"c4.2xlarge",     "medium":"c4.4xlarge",      "large":"c4.8xlarge"       }
 		}
 	},
 
@@ -334,7 +334,7 @@
 					},{
 						"Effect": "Allow",
 						"Action" : [ "route53:ChangeResourceRecordSets", "route53:ListHostedZones", "route53:ListResourceRecordSets" ],
-						"Resource" : [ { "Fn::Join" : [ "", [ "arn:aws:route53:::hostedzone/", { "Ref" : "PublicHostedZone" } ] ] }, 
+						"Resource" : [ { "Fn::Join" : [ "", [ "arn:aws:route53:::hostedzone/", { "Ref" : "PublicHostedZone" } ] ] },
 									   { "Fn::Join" : [ "", [ "arn:aws:route53:::hostedzone/", { "Ref" : "PrivateHostedZone" } ] ] } ]
 					},{
 						"Effect": "Allow",
@@ -2802,8 +2802,8 @@
 				"Role": { "Fn::GetAtt" : ["route53cleanLambdaRole", "Arn"] }
 			}
 		},
-		"route53cleanInfo": {
-			"Type": "Custom::AMIInfo",
+		"route53clean": {
+			"Type": "Custom::route53clean",
 			"Properties": {
 				"ServiceToken": { "Fn::GetAtt" : [ "route53cleanFunction", "Arn" ] },
 				"PublicHostedZone": { "Ref": "PublicHostedZone" },
@@ -2822,10 +2822,12 @@
 		},
 		"openvpnAMIId" : {
 			"Description" : "openvpn AMI used",
+			"Condition" : "openVpnCreation",
 			"Value" : { "Fn::GetAtt": [ "openvpnAMILookUpInfo", "Id" ] }
 		},
 		"openvpnAMIName" : {
 			"Description" : "openvpn AMI used",
+			"Condition" : "openVpnCreation",
 			"Value" : { "Fn::GetAtt": [ "openvpnAMILookUpInfo", "Name" ] }
 		}
 	}
