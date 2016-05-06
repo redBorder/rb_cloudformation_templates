@@ -858,7 +858,6 @@
 		},
 		"SNSNotificationTopic" : {
 			"Type" : "AWS::SNS::Topic",
-			"Condition" : "EnableNotifications",
 			"Properties" : {
 				"Subscription" : { "Fn::If" : [ "EnableNotifications" , [ {
 					"Protocol" : "email",
@@ -3082,10 +3081,12 @@
 		},
 		"openvpnAMIId" : {
 			"Description" : "openvpn AMI used",
+			"Condition" : "openVPNInstanceCreation",
 			"Value" : { "Fn::GetAtt": [ "openvpnAMILookUpInfo", "Id" ] }
 		},
 		"openvpnAMIName" : {
 			"Description" : "openvpn AMI used",
+			"Condition" : "openVPNInstanceCreation",
 			"Value" : { "Fn::GetAtt": [ "openvpnAMILookUpInfo", "NameId" ] }
 		}
 	}

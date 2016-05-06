@@ -2821,10 +2821,12 @@
 		},
 		"openvpnAMIId" : {
 			"Description" : "openvpn AMI used",
+			"Condition" : "openVpnCreation",
 			"Value" : { "Fn::GetAtt": [ "openvpnAMILookUpInfo", "Id" ] }
 		},
 		"openvpnAMIName" : {
 			"Description" : "openvpn AMI used",
+			"Condition" : "openVpnCreation",
 			"Value" : { "Fn::GetAtt": [ "openvpnAMILookUpInfo", "Name" ] }
 		}
 	}
