@@ -25,6 +25,9 @@
 									"HistoricalGenericInstanceType", "HistoricalGenericEBSSize", "HistoricalGenericInstances"
 				]
 			}, {
+				"Label" : { "default" : "VPC Configuration" },
+				"Parameters" : [ "VPCId", "PublicSubnetId", "PrivateSubnetId" ]
+			}, {
 				"Label" : { "default" : "OpenVPN Configuration" },
 				"Parameters" : [ "CreateOpenVPNInstance", "openVPNAdminPasswd" ]
 			}, {
@@ -86,6 +89,10 @@
 				"HistoricalGenericInstanceType" : { "default" : "Historical Generic - instance size" },
 				"HistoricalGenericEBSSize" : { "default" : "Historical Generic - EBS disk size" },
 				"HistoricalGenericInstances" : { "default" : "Historical Generic - minimal number of instances" },
+
+				"VPCId" : { "default" : "VPC Id" },
+				"PublicSubnetId" : { "default" : "Public Subnet Id" },
+				"PrivateSubnetId" : { "default" : "Private Subnet Id" },
 
 				"CreateOpenVPNInstance" : { "default" : "Create openvpn instance" },
 				"openVPNAdminPasswd" : { "default" : "Openvpn password for admin user" },
@@ -432,6 +439,19 @@
 			"ConstraintDescription" : "number of nodes must between 0 and 10"
 		},
 
+		"VPCId" : {
+			"Description" : "(OPTIONAL) VPC Id in which create rB instance. If is not specified a new VPC will be created",
+			"Type" : "String"
+		},
+		"PublicSubnetId" : {
+			"Description" : "(OPTIONAL) Public Subnet for instance external interface. If is not specified, a new subnet will be created",
+			"Type" : "String"
+		},
+		"PrivateSubnetId" : {
+			"Description" : "(OPTIONAL) Public Subnet for instance internal interface. If is not specified, a new subnet will be created",
+			"Type" : "String"
+		},
+
 		"CreateOpenVPNInstance" : {
 			"Description" : "(REQUIRED) Indicates if you want VPN access to public and private subnets",
 			"Type" : "String",
@@ -554,6 +574,15 @@
 		},
 		"Restore" : {
 			"Fn::Not" : [ { "Fn::Equals" : [ "", { "Ref" : "PreviousS3Bucket" } ] } ]
+		},
+		"CreateVPC" : {
+			"Fn::Equals" : [ "", { "Ref" : "VPCId" } ]
+		},
+		"CreatePublicSubnet" : {
+			"Fn::Equals" : [ "", { "Ref" : "PublicSubnetId" } ]
+		},
+		"CreatePrivateSubnet" : {
+			"Fn::Equals" : [ "", { "Ref" : "PublicSubnetId" } ]
 		}
 	},
 	
@@ -571,7 +600,7 @@
 		"PublicSubnet" : {
 			"Type" : "AWS::EC2::Subnet",
 			"Properties" : {
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"CidrBlock" : "172.16.1.0/24",
 				"AvailabilityZone" : { "Fn::Select" : [ 0, { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
 				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "PublicSubnet" ] ] } } ]
@@ -580,7 +609,7 @@
 		"PrivateSubnet" : {
 			"Type" : "AWS::EC2::Subnet",
 			"Properties" : {
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"CidrBlock" : "172.16.2.0/24",
 				"AvailabilityZone" : { "Fn::GetAtt" : [ "PublicSubnet", "AvailabilityZone" ] },
 				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "PrivateSubnet" ] ] } } ]
@@ -590,7 +619,7 @@
 			"Type" : "AWS::EC2::Subnet",
 			"Condition" : "RDSCreation",
 			"Properties" : {
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"CidrBlock" : "172.16.3.0/24",
 				"AvailabilityZone" : { "Fn::Select" : [ 1, { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
 				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "BackupSunbet" ] ] } } ]
@@ -605,14 +634,14 @@
 		"AttachGateway" : {
 			"Type" : "AWS::EC2::VPCGatewayAttachment",
 			"Properties" : {
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"InternetGatewayId" : { "Ref" : "InternetGateway" }
 			}
 		},
 		"RouteTable" : {
 			"Type" : "AWS::EC2::RouteTable",
 			"Properties" : {
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "RouteTable" ] ] } } ]
 			}
 		},
@@ -628,7 +657,7 @@
 		"PublicSubnetRouteTableAssociation" : {
 			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
 			"Properties" : {
-				"SubnetId" : { "Ref" : "PublicSubnet" },
+				"SubnetId" : { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] },
 				"RouteTableId" : { "Ref" : "RouteTable" }
 			}
 		},
@@ -886,7 +915,7 @@
 			"Condition" : "RDSCreation",
 			"Properties" : {
 				"DBSubnetGroupDescription" : "redBorder RDS subnet group",
-				"SubnetIds" : [ { "Ref" : "PrivateSubnet" }, { "Ref" : "BackupSubnet" } ]
+				"SubnetIds" : [ { "Fn::If" : [ "CreatePrivateSubnet", { "Ref" : "PrivateSubnet"  }, { "Ref" : "PrivateSubnetId"} ] }, { "Ref" : "BackupSubnet" } ]
 			}
 		}, 
 		"Memcached" : {
@@ -906,7 +935,7 @@
 			"Condition" : "ElasticacheCreation",
 			"Properties" : {
 				"Description" : "Subnet Group for Memcached", 
-				"SubnetIds" : [ { "Ref" : "PrivateSubnet" }, { "Ref" : "BackupSubnet" } ]
+				"SubnetIds" : [ { "Fn::If" : [ "CreatePrivateSubnet", { "Ref" : "PrivateSubnet"  }, { "Ref" : "PrivateSubnetId"} ] }, { "Ref" : "BackupSubnet" } ]
 			}
 		},  
 		"MemcachedSecurityGroup" : {
@@ -914,7 +943,7 @@
 			"Condition" : "ElasticacheCreation",
 			"Properties" : {
 				"GroupDescription" : "Enable access to DataBase for VPC instances",
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"SecurityGroupIngress" : [ {
 					"IpProtocol" : "tcp",
 					"FromPort" : "11211",
@@ -931,7 +960,7 @@
 			"Type" : "AWS::EC2::SecurityGroup",
 			"Properties" : {
 				"GroupDescription" : "Security group for redBorder bond0 interfaces (public interfaces)",
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"SecurityGroupIngress" : [ {
 					"IpProtocol" : "tcp",
 					"FromPort" : { "Fn::If" : [ "openVPNInstanceCreation", "22", "6666" ] },
@@ -973,7 +1002,7 @@
 			"Type" : "AWS::EC2::SecurityGroup",
 			"Properties" : {
 				"GroupDescription" : "Security group for redBorder bond1 interfaces (private interfaces)",
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"Tags" : [ {
 					"Key" : "Cluster",
 					"Value" : { "Ref" : "AWS::StackName" }
@@ -1000,7 +1029,7 @@
 			"Condition" : "openVPNInstanceCreation",
 			"Properties" : {
 				"GroupDescription" : "Enable ports for OpenVPN service Port 943 is for administrator web access",
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"SecurityGroupIngress" : [ { 
 					"IpProtocol" : "tcp", 
 					"FromPort" : "443",
@@ -1028,7 +1057,7 @@
 			"Type" : "AWS::EC2::SecurityGroup",
 			"Properties" : {
 				"GroupDescription" : "Enable SSH, HTTP and HTTPS",
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"SecurityGroupIngress" : [ {
 					"IpProtocol" : "tcp",
 					"FromPort" : "443",
@@ -1056,7 +1085,7 @@
 			"Condition" : "InternalLoadBalancerCreation",
 			"Properties" : {
 				"GroupDescription" : "Enable erchef, postgresql, pgpool, resourcemanager and namenode traffic",
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"SecurityGroupIngress" : [ {
 					"IpProtocol" : "tcp",
 					"FromPort" : "443",
@@ -1074,7 +1103,7 @@
 			"Condition" : "InternalLoadBalancerCreation",
 			"Properties" : {
 				"GroupDescription" : "Enable Kafka TCP traffic",
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"SecurityGroupIngress" : [ {
 					"IpProtocol" : "tcp",
 					"FromPort" : "9092",
@@ -1091,7 +1120,7 @@
 			"Type" : "AWS::EC2::SecurityGroup",
 			"Properties" : {
 				"GroupDescription" : "Enable access to DataBase for VPC instances",
-				"VpcId" : { "Ref" : "VPC" },
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"SecurityGroupIngress" : [ {
 					"IpProtocol" : "tcp",
 					"FromPort" : "5432",
@@ -1122,7 +1151,7 @@
 				},
 				"Name" : { "Fn::Join" : [ "", [ { "Ref" : "CDOMAIN" }, "." ] ] },
 				"VPCs" : [ {
-					"VPCId" : { "Ref" : "VPC" }, 
+					"VPCId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] }, 
 					"VPCRegion" : { "Ref" : "AWS::Region" }
 				} ]
 			}
@@ -1217,7 +1246,7 @@
 			"Properties" : {
 				"CrossZone" : "true",
 				"SecurityGroups" : [ { "Ref" : "WebLoadBalancerSecurityGroup" } ], 
-				"Subnets" : [ { "Ref" : "PublicSubnet" } ],
+				"Subnets" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"ConnectionDrainingPolicy" : {
 					"Enabled" : "true",
 					"Timeout" : "30"
@@ -1249,7 +1278,7 @@
 			"Properties" : {
 				"CrossZone" : "true",
 				"SecurityGroups" : [ { "Ref" : "WebLoadBalancerSecurityGroup" } ], 
-				"Subnets" : [ { "Ref" : "PublicSubnet" } ],
+				"Subnets" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"ConnectionDrainingPolicy" : {
 					"Enabled" : "true",
 					"Timeout" : "30"
@@ -1277,7 +1306,7 @@
 			"Properties" : {
 				"CrossZone" : "true",
 				"SecurityGroups" : [ { "Ref" : "WebLoadBalancerSecurityGroup" } ], 
-				"Subnets" : [ { "Ref" : "PublicSubnet" } ],
+				"Subnets" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"Scheme" : "internal",
 				"ConnectionDrainingPolicy" : {
 					"Enabled" : "true",
@@ -1306,7 +1335,7 @@
 			"Properties" : {
 				"CrossZone" : "true",
 				"SecurityGroups" : [ { "Ref" : "KafkaLoadBalancerSecurityGroup" } ], 
-				"Subnets" : [ { "Ref" : "PublicSubnet" } ],
+				"Subnets" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"Scheme" : "internal",
 				"ConnectionDrainingPolicy" : {
 					"Enabled" : "true",
@@ -1332,7 +1361,7 @@
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
 			"DependsOn" : "AttachGateway",
 			"Properties" : {
-				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
+				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "corezkLaunch" },
 				"LoadBalancerNames" : { "Fn::If" : [ "InternalLoadBalancerCreation", [ { "Ref" : "CoreElasticLoadBalancer" } ], { "Ref" : "AWS::NoValue" } ] },
 				"MinSize" : { "Ref" : "CorezkInstances" },
@@ -1398,13 +1427,13 @@
 					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
-					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"VPCID=", { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] }, "\n",
 					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=corezkGroup\n",
 					"LOGWATCHG=", { "Ref" : "AWS::StackName" }, "\n",
 					"SQSQUEUEURL=", { "Ref" : "SQSQueue" }, "\n",
-					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n",
+					"SUBNET_ID=", { "Fn::If" : [ "CreatePrivateSubnet", { "Ref" : "PrivateSubnet"  }, { "Ref" : "PrivateSubnetId"} ] }, "\n",
 					"S3BUCKET=", { "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, " \n",
 					{ "Fn::If" : [ "regionNVirginia",
 						"S3HOST=s3.amazonaws.com\n",
@@ -1463,7 +1492,7 @@
 			"Condition" : "kafkaRoleCreation",
 			"DependsOn" : "corezkGroup",
 			"Properties" : {
-				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
+				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "kafkaLaunch" },
 				"LoadBalancerNames" : { "Fn::If" : [ "InternalLoadBalancerCreation", [ { "Ref" : "KafkaElasticLoadBalancer" } ], { "Ref" : "AWS::NoValue" } ] },
 				"MinSize" : { "Ref" : "MinKafkaInstances" },
@@ -1528,11 +1557,11 @@
 					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
-					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"VPCID=", { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] }, "\n",
 					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=kafkaGroup\n",
-					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n",
+					"SUBNET_ID=", { "Fn::If" : [ "CreatePrivateSubnet", { "Ref" : "PrivateSubnet"  }, { "Ref" : "PrivateSubnetId"} ] }, "\n",
 					"S3BUCKET=", { "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, " \n",
 					{ "Fn::If" : [ "regionNVirginia",
 						"S3HOST=s3.amazonaws.com\n",
@@ -1566,7 +1595,7 @@
 			"Condition" : "http2kRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
-				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
+				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LoadBalancerNames" : [ { "Ref" : "DataElasticLoadBalancer" } ],
 				"LaunchConfigurationName" : { "Ref" : "http2kLaunch" },
 				"MinSize" : { "Ref" : "MinHttp2kInstances" },
@@ -1633,11 +1662,11 @@
 					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
-					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"VPCID=", { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] }, "\n",
 					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=http2kGroup\n",
-					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n",
+					"SUBNET_ID=", { "Fn::If" : [ "CreatePrivateSubnet", { "Ref" : "PrivateSubnet"  }, { "Ref" : "PrivateSubnetId"} ] }, "\n",
 					"S3BUCKET=", { "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, " \n",
 					{ "Fn::If" : [ "regionNVirginia",
 						"S3HOST=s3.amazonaws.com\n",
@@ -1743,7 +1772,7 @@
 			"Condition" : "webRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
-				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
+				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "webLaunch" },
 				"LoadBalancerNames" : [ { "Ref" : "WebElasticLoadBalancer" } ],
 				"MinSize" : { "Ref" : "MinWebInstances" },
@@ -1810,11 +1839,11 @@
 					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
-					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"VPCID=", { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] }, "\n",
 					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=webGroup\n",
-					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n",
+					"SUBNET_ID=", { "Fn::If" : [ "CreatePrivateSubnet", { "Ref" : "PrivateSubnet"  }, { "Ref" : "PrivateSubnetId"} ] }, "\n",
 					"S3BUCKET=", { "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, " \n",
 					{ "Fn::If" : [ "regionNVirginia",
 						"S3HOST=s3.amazonaws.com\n",
@@ -1921,7 +1950,7 @@
 			"Condition" : "brokerRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
-				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
+				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "brokerLaunch" },
 				"MinSize" : { "Ref" : "MinBrokerInstances" },
 				"MaxSize" : { "Ref" : "BrokerEBSSize"},
@@ -1987,11 +2016,11 @@
 					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
-					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"VPCID=", { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] }, "\n",
 					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=brokerGroup\n",
-					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n",
+					"SUBNET_ID=", { "Fn::If" : [ "CreatePrivateSubnet", { "Ref" : "PrivateSubnet"  }, { "Ref" : "PrivateSubnetId"} ] }, "\n",
 					"S3BUCKET=", { "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, " \n",
 					{ "Fn::If" : [ "regionNVirginia",
 						"S3HOST=s3.amazonaws.com\n",
@@ -2140,7 +2169,7 @@
 			"Condition" : "middlemanagerRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
-				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
+				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "middlemanagerLaunch" },
 				"MinSize" : { "Ref" : "MinMiddlemanagerInstances" },
 				"MaxSize" : { "Ref" : "MiddlemanagerEBSSize"},
@@ -2206,11 +2235,11 @@
 					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
-					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"VPCID=", { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] }, "\n",
 					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=middlemanagerGroup\n",
-					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n",
+					"SUBNET_ID=", { "Fn::If" : [ "CreatePrivateSubnet", { "Ref" : "PrivateSubnet"  }, { "Ref" : "PrivateSubnetId"} ] }, "\n",
 					"S3BUCKET=", { "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, " \n",
 					{ "Fn::If" : [ "regionNVirginia",
 						"S3HOST=s3.amazonaws.com\n",
@@ -2328,7 +2357,7 @@
 			"Condition" : "historicalRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
-				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
+				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "historicalLaunch" },
 				"MinSize" : { "Ref" : "MinHistoricalInstances" },
 				"MaxSize" : { "Ref" : "HistoricalEBSSize"},
@@ -2394,11 +2423,11 @@
 					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
-					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"VPCID=", { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] }, "\n",
 					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=historicalGroup\n",
-					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n",
+					"SUBNET_ID=", { "Fn::If" : [ "CreatePrivateSubnet", { "Ref" : "PrivateSubnet"  }, { "Ref" : "PrivateSubnetId"} ] }, "\n",
 					"S3BUCKET=", { "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, " \n",
 					{ "Fn::If" : [ "regionNVirginia",
 						"S3HOST=s3.amazonaws.com\n",
@@ -2506,7 +2535,7 @@
 			"Condition" : "historicalhotRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
-				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
+				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "historicalhotLaunch" },
 				"MinSize" : { "Ref" : "MinHistoricalhotInstances" },
 				"MaxSize" : { "Ref" : "HistoricalhotEBSSize"},
@@ -2572,11 +2601,11 @@
 					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
-					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"VPCID=", { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] }, "\n",
 					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=historicalhotGroup\n",
-					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n",
+					"SUBNET_ID=", { "Fn::If" : [ "CreatePrivateSubnet", { "Ref" : "PrivateSubnet"  }, { "Ref" : "PrivateSubnetId"} ] }, "\n",
 					"S3BUCKET=", { "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, " \n",
 					{ "Fn::If" : [ "regionNVirginia",
 						"S3HOST=s3.amazonaws.com\n",
@@ -2691,7 +2720,7 @@
 			"Condition" : "historicalGenericRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
-				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
+				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "historicalGenericLaunch" },
 				"MinSize" : { "Ref" : "HistoricalGenericInstances" },
 				"MaxSize" : { "Ref" : "HistoricalGenericEBSSize"},
@@ -2757,11 +2786,11 @@
 					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
-					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"VPCID=", { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] }, "\n",
 					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=historicalGenericGroup\n",
-					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n",
+					"SUBNET_ID=", { "Fn::If" : [ "CreatePrivateSubnet", { "Ref" : "PrivateSubnet"  }, { "Ref" : "PrivateSubnetId"} ] }, "\n",
 					"S3BUCKET=", { "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, " \n",
 					{ "Fn::If" : [ "regionNVirginia",
 						"S3HOST=s3.amazonaws.com\n",
@@ -2801,7 +2830,7 @@
 			"Condition" : "samzaRoleCreation",
 			"DependsOn" : "kafkaGroup",
 			"Properties" : {
-				"VPCZoneIdentifier" : [ { "Ref" : "PublicSubnet" } ],
+				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "samzaLaunch" },
 				"MinSize" : { "Ref" : "MinSamzaInstances" },
 				"MaxSize" : { "Ref" : "SamzaEBSSize"},
@@ -2867,11 +2896,11 @@
 					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n", 
 					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n", 
 					"REGION=", { "Ref" : "AWS::Region" }, "\n",
-					"VPCID=", { "Ref" : "VPC" }, "\n",
+					"VPCID=", { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] }, "\n",
 					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
 					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
 					"AUTOSCALINGGROUPNAME=samzaGroup\n",
-					"SUBNET_ID=", { "Ref" : "PrivateSubnet" }, "\n",
+					"SUBNET_ID=", { "Fn::If" : [ "CreatePrivateSubnet", { "Ref" : "PrivateSubnet"  }, { "Ref" : "PrivateSubnetId"} ] }, "\n",
 					"S3BUCKET=", { "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, " \n",
 					{ "Fn::If" : [ "regionNVirginia",
 						"S3HOST=s3.amazonaws.com\n",
@@ -2911,7 +2940,7 @@
 			      	"AssociatePublicIpAddress": "true",
 			      	"DeviceIndex": "0",
 			      	"GroupSet": [ { "Ref" : "openVPNSecurityGroup" } ],
-			      	"SubnetId": { "Ref" : "PublicSubnet" }
+			      	"SubnetId": { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] }
 			    } ],				
 				"SourceDestCheck" : "false",
 				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
@@ -2937,7 +2966,7 @@
  			"Type" : "AWS::EC2::NetworkInterface",
 			"Condition" : "openVPNInstanceCreation", 
 			"Properties" : {
-				"SubnetId" : { "Ref" : "PrivateSubnet" },
+				"SubnetId" : { "Fn::If" : [ "CreatePrivateSubnet", { "Ref" : "PrivateSubnet"  }, { "Ref" : "PrivateSubnetId"} ] },
 				"GroupSet" : [ { "Ref" : "redBorderPrivateSecurityGroup" } ]
 			}
 		}, 
