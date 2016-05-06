@@ -63,15 +63,15 @@
 		},
 		"VPCId" : {
 			"Description" : "(OPTIONAL) VPC Id in which create rB instance. If is not specified a new VPC will be created",
-			"Type" : "AWS::EC2::VPC::Id"
+			"Type" : "String"
 		},
 		"PublicSubnetId" : {
 			"Description" : "(OPTIONAL) Public Subnet for instance external interface. If is not specified, a new subnet will be created",
-			"Type" : "AWS::EC2::Subnet::Id"
+			"Type" : "String"
 		},
 		"PrivateSubnetId" : {
 			"Description" : "(OPTIONAL) Public Subnet for instance internal interface. If is not specified, a new subnet will be created",
-			"Type" : "AWS::EC2::Subnet::Id"
+			"Type" : "String"
 		},
 		"PreviousS3Bucket" : {
 			"Description" : "(OPTIONAL) S3 Bucket from a previous installation, for restore. Keep empty to avoid restore and create a new bucket",
