@@ -36,6 +36,9 @@
 			}, {
 				"Label" : { "default" : "External services" },
 				"Parameters" : [ "UseRDS", "RDSInstanceType", "DBPassword", "UseElasticache", "ElasticacheInstanceType" ]
+			}, {
+				"Label" : { "default" : "High Availability options" },
+				"Parameters" : [ "RegionForS3Replication" ]
 			}  ],
 			"ParameterLabels" : {
 				"AMIType" : { "default" : "redBorder AMI type" },
@@ -98,7 +101,9 @@
 				"RDSInstanceType" : { "default" : "RDS - instance type" },
 				"DBPassword" : { "default" : "RDS - admin password" },
 				"UseElasticache" : { "default" : "Use AWS Elasticache" },
-				"ElasticacheInstanceType" : { "default" : "Elasticache - instance type" }
+				"ElasticacheInstanceType" : { "default" : "Elasticache - instance type" },
+
+				"RegionForS3Replication" : { "default" : "Region for S3 cross region replication" }
 			}
 		}
 	},
@@ -501,6 +506,13 @@
 			],
 			"Default" : "cache.t2.small",
 			"ConstraintDescription" : "must be an allowed instance type"
+		},
+		"RegionForS3Replication" : {
+			"Description" : "(OPTIONAL) Choose region for S3 cross region replication. If you don't need cross region replication, choose disable",
+			"Type" : "String",
+			"AllowedValues" : [ "disable", "eu-west-1", "ap-southeast-1", "ap-southeast-2", "eu-central-1",
+								"cn-north-1", "ap-northeast-1", "us-east-1", "sa-east-1", "us-west-1", "us-west-2" ],
+			"Default" : "disable"
 		}
 
 	},
@@ -553,6 +565,12 @@
 		},
 		"Restore" : {
 			"Fn::Not" : [ { "Fn::Equals" : [ "", { "Ref" : "PreviousS3Bucket" } ] } ]
+		},
+		"EnableCrossRegionReplication" : {
+			"Fn::And" : [
+				{ "Fn::Not" : [ { "Fn::Equals" : [ "disable", { "Ref" : "RegionForS3Replication" } ] } ] },
+				{ "Fn::Equals" : [ "", { "Ref" : "PreviousS3Bucket" } ] }
+			]
 		},
 		"EnableNotifications" : {
 			"Fn::Not" : [ { "Fn::Equals" : [ "", { "Ref" : "Email" } ] } ]
@@ -796,11 +814,99 @@
 				"Roles" :  [ { "Ref" : "IAMRoleLifecycleHook" } ]
 			}
 		},
+		"IAMRoleS3Replication" : {
+			"Type" : "AWS::IAM::Role",
+			"Condition" : "EnableCrossRegionReplication",
+			"Properties" : {
+				"AssumeRolePolicyDocument" : {
+					"Version" : "2012-10-17",
+					"Statement" : [ {
+						"Effect" : "Allow",
+						"Principal" : {
+							"Service" : "s3.amazonaws.com"
+						},
+						"Action" : "sts:AssumeRole"
+					} ]
+				}
+			}
+		},
+		"IAMPolicyS3Replication" : {
+			"Type" : "AWS::IAM::Policy",
+			"Condition" : "EnableCrossRegionReplication",
+			"Properties" : {
+				"PolicyName" : "RB-CF-POLICY-FOR-S3-REPLICATION",
+				"PolicyDocument" : {
+					"Version" : "2012-10-17",
+					"Statement" : [ {
+						"Effect":"Allow",
+						"Action":[
+							"s3:GetReplicationConfiguration",
+							"s3:ListBucket"
+						],
+						"Resource": { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref" : "S3Bucket" } ] ] }
+					}, {
+						"Effect":"Allow",
+						"Action":[
+							"s3:GetObjectVersion",
+							"s3:GetObjectVersionAcl"
+						],
+						"Resource": { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref" : "S3Bucket" }, "/*" ] ] }
+					},
+						{
+							"Effect": "Allow",
+							"Action": [
+								"s3:ReplicateObject",
+								"s3:ReplicateDelete"
+							],
+							"Resource": { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Fn::GetAtt" : [ "S3bucketForReplication", "BucketName" ] }, "/*" ] ] }
+						}
+					]
+				},
+				"Roles" : [ { "Ref" : "IAMRoleS3Replication" } ]
+			}
+		},
+
 		"S3Bucket" : {
 			"Type" : "AWS::S3::Bucket",
 			"Condition" : "S3Creation",
 			"Properties" : {
-				"AccessControl" : "Private"
+				"AccessControl" : "Private",
+				"VersioningConfiguration" : {
+					"Fn::If": [ "EnableCrossRegionReplication",
+						{
+							"Status": "Enabled"
+						},
+						{ "Ref" : "AWS::NoValue" }
+					]
+				},
+				"LifecycleConfiguration" : {
+					"Fn::If" : [ "EnableCrossRegionReplication",
+						{
+							"Rules": [
+								{
+									"NoncurrentVersionExpirationInDays": 1,
+									"Status" : "Enabled"
+								}
+							]
+						},
+						{ "Ref" : "AWS::NoValue" }
+					]
+				},
+				"ReplicationConfiguration" : {
+					"Fn::If" : [ "EnableCrossRegionReplication",
+						{
+							"Role": { "Fn::GetAtt" : [ "IAMRoleS3Replication", "Arn" ] },
+							"Rules": [ {
+								"Status": "Enabled",
+								"Prefix" : "",
+								"Destination": {
+									"Bucket": { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Fn::GetAtt" : [ "S3bucketForReplication", "BucketName" ] } ] ] }
+								}
+							} ]
+						},
+						{ "Ref" : "AWS::NoValue" }
+					]
+				}
 			},
 			"DeletionPolicy" : "Retain"
 		},
@@ -810,16 +916,77 @@
 			"Properties" : {
 				"Bucket" : { "Ref" : "S3Bucket" },
 				"PolicyDocument" : {
-					"Statement" : [ { 
+					"Statement" : [ {
 						"Effect" : "Allow",
 						"Principal" : "*",
 						"Action" : [ "s3:GetObject" ],
 						"Resource" : { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref" : "S3Bucket" },
-							 "/Public/*" ] ] }
+							"/Public/*" ] ] }
 					} ]
-				} 
+				}
+			},
+			"DeletionPolicy" : "Retain"
+		},
+		"S3createLambdaRole": {
+			"Type": "AWS::IAM::Role",
+			"Condition" : "EnableCrossRegionReplication",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [{
+						"Effect": "Allow",
+						"Principal": {"Service": ["lambda.amazonaws.com"]},
+						"Action": ["sts:AssumeRole"]
+					}]
+				},
+				"Path": "/",
+				"Policies": [{
+					"PolicyName": "root",
+					"PolicyDocument": {
+						"Version": "2012-10-17",
+						"Statement": [{
+							"Effect": "Allow",
+							"Action": ["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],
+							"Resource": "arn:aws:logs:*:*:*"
+						},
+							{
+								"Effect": "Allow",
+								"Action": [
+									"s3:CreateBucket",
+									"s3:PutBucketVersioning",
+									"s3:PutLifecycleConfiguration"
+								],
+								"Resource": "*"
+							}]
+					}
+				}]
 			}
 		},
+		"S3createFunction" : {
+			"Type" : "AWS::Lambda::Function",
+			"Condition" : "EnableCrossRegionReplication",
+			"Properties" : {
+				"Code": {
+					"S3Bucket": { "Fn::Join" : [ "-", [ "rblambdafunctions", { "Ref" : "AWS::Region" } ] ] },
+					"S3Key": "rb_cfn_create_bucket.zip"
+				},
+				"Handler": "index.handler",
+				"Runtime": "nodejs4.3",
+				"Timeout": "10",
+				"Role": { "Fn::GetAtt" : ["S3createLambdaRole", "Arn"] }
+			}
+		},
+		"S3bucketForReplication": {
+			"Type": "Custom::S3Bucket",
+			"Condition" : "EnableCrossRegionReplication",
+			"Properties": {
+				"ServiceToken": { "Fn::GetAtt" : [ "S3createFunction", "Arn" ] },
+				"Region": { "Ref": "RegionForS3Replication" },
+				"StackName": { "Ref" : "AWS::StackName" },
+				"EnableVersioning" : "true"
+			}
+		},
+
 		"SQSQueue" : {
 			"Type" : "AWS::SQS::Queue",
 			"Properties" : {
