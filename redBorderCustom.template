@@ -609,6 +609,7 @@
 	"Resources" : {
 		"VPC" : {
 			"Type" : "AWS::EC2::VPC",
+			"Condition" : "CreateVPC",
 			"Properties" : {
 				"CidrBlock" : "172.16.0.0/16",
 				"EnableDnsSupport" : "true",
@@ -619,6 +620,7 @@
 		},
 		"PublicSubnet" : {
 			"Type" : "AWS::EC2::Subnet",
+			"Condition" : "CreatePublicSubnet",
 			"Properties" : {
 				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"CidrBlock" : "172.16.1.0/24",
@@ -628,10 +630,11 @@
 		},
 		"PrivateSubnet" : {
 			"Type" : "AWS::EC2::Subnet",
+			"Condition" : "CreatePrivateSubnet",
 			"Properties" : {
 				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"CidrBlock" : "172.16.2.0/24",
-				"AvailabilityZone" : { "Fn::GetAtt" : [ "PublicSubnet", "AvailabilityZone" ] },
+				"AvailabilityZone" : { "Fn::Select" : [ 0, { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
 				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "PrivateSubnet" ] ] } } ]
 			}
 		},
@@ -647,12 +650,14 @@
 		}, 
 		"InternetGateway" : {
 			"Type" : "AWS::EC2::InternetGateway",
+			"Condition" : "CreateVPC",
 			"Properties" : {
 				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "InternetGateway" ] ] } } ]
 			}
 		},
 		"AttachGateway" : {
 			"Type" : "AWS::EC2::VPCGatewayAttachment",
+			"Condition" : "CreateVPC",
 			"Properties" : {
 				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"InternetGatewayId" : { "Ref" : "InternetGateway" }
@@ -660,6 +665,7 @@
 		},
 		"RouteTable" : {
 			"Type" : "AWS::EC2::RouteTable",
+			"Condition" : "CreateVPC",
 			"Properties" : {
 				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
 				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "RouteTable" ] ] } } ]
@@ -667,6 +673,7 @@
 		},
 		"Route" : {
 			"Type" : "AWS::EC2::Route",
+			"Condition" : "CreateVPC",
 			"DependsOn" : "AttachGateway",
 			"Properties" : {
 				"RouteTableId" : { "Ref" : "RouteTable" },
@@ -676,6 +683,7 @@
 		},
 		"PublicSubnetRouteTableAssociation" : {
 			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
+			"Condition" : "CreateVPC",
 			"Properties" : {
 				"SubnetId" : { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] },
 				"RouteTableId" : { "Ref" : "RouteTable" }
@@ -1092,7 +1100,7 @@
 			"Condition" : "ElasticacheCreation",
 			"Properties" : {
 				"Engine" : "memcached", 
-				"PreferredAvailabilityZone" : { "Fn::GetAtt" : [ "PrivateSubnet", "AvailabilityZone" ] },
+				"PreferredAvailabilityZone" :  { "Fn::Select" : [ 0, { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
 				"NumCacheNodes" : "1",
 				"CacheNodeType" : { "Ref" : "ElasticacheInstanceType" },
 				"CacheSubnetGroupName" : { "Ref" : "MemcachedSubnetGroup" },
@@ -1528,7 +1536,6 @@
 		
 		"corezkGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
-			"DependsOn" : "AttachGateway",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "corezkLaunch" },
@@ -3101,7 +3108,7 @@
 			"Type" : "AWS::EC2::Instance",
 			"Condition" : "openVPNInstanceCreation",
 			"Properties" : {
-				"AvailabilityZone" : { "Fn::GetAtt" : [ "PublicSubnet", "AvailabilityZone" ] },
+				"AvailabilityZone" : { "Fn::Select" : [ 0, { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
 				"ImageId" : { "Fn::GetAtt": [ "openvpnAMILookUpInfo", "Id" ] },
 				"InstanceType" : "t2.micro",
 				"KeyName" : { "Ref" : "KeyName" },
