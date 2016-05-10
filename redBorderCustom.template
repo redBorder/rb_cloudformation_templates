@@ -3265,8 +3265,8 @@
 				"Role": { "Fn::GetAtt" : ["route53cleanLambdaRole", "Arn"] }
 			}
 		},
-		"route53cleanInfo": {
-			"Type": "Custom::AMIInfo",
+		"route53clean": {
+			"Type": "Custom::Route53clean",
 			"Properties": {
 				"ServiceToken": { "Fn::GetAtt" : [ "route53cleanFunction", "Arn" ] },
 				"PublicHostedZone": { "Ref": "PublicHostedZone" },
