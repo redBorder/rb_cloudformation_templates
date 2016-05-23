@@ -12,6 +12,9 @@
 				"Label" : { "default" : "Domain and certificates" },
 				"Parameters" : [ "CDOMAIN", "WebSSLCertificateName", "DataSSLCertificateName" ]
 			}, {
+				"Label" : { "default" : "Web configuration" },
+				"Parameters" : [ "AdminPasswd" ]
+			}, {
 				"Label" : { "default" : "Roles Configuration" },
 				"Parameters" : [	"CorezkInstanceType", "CorezkEBSSize", "CorezkInstances",
 								 	"KafkaInstanceType", "KafkaEBSSize", "MinKafkaInstances",
@@ -48,6 +51,8 @@
 				"AMIVersion" : { "default" : "redBorder AMI version" },
 				"KeyName" : { "default" : "Key Name" },
 				"CreateInternalLoadBalancers" : { "default" : "Create internal load balancers" },
+
+				"AdminPasswd" : { "default" : "Admin password" },
 
 				"CDOMAIN" : { "default" : "Cluster Domain" },
 				"WebSSLCertificateName" : { "default" : "SSL certificate name for Web" },
@@ -138,6 +143,10 @@
 			"Type" : "String",
 			"AllowedValues" : [ "true", "false" ],
 			"Default" : "true"
+		},
+		"AdminPasswd" : {
+			"Description" : "(CONDITION) Password for admin user. If is empty, default password will be used",
+			"Type" : "String"
 		},
 
 		"CDOMAIN" : {
@@ -603,6 +612,9 @@
 		},
 		"CreatePrivateSubnet" : {
 			"Fn::Equals" : [ "", { "Ref" : "PublicSubnetId" } ]
+		},
+		"AdminPasswordCreation" : {
+			"Fn::Not" : [ { "Fn::Equals" : [ "", { "Ref" : "AdminPasswd" } ] } ]
 		}
 	},
 	
@@ -1645,8 +1657,20 @@
 					"ENRICHMODE=samza\n",
 					{ "Fn::If" : [ "middlemanagerRoleCreation", { "Fn::Join" : [ "", [ "MMDOWNALARMNAME=\"", { "Ref" : "middlemanagerLowCapacityAlarm" }, "\"\n" ] ] } , "" ] },
 					{ "Fn::If" : [ "historicalhotRoleCreation",
-						"CMDFINISH='rb_druid_rules.rb -t _default -p pt24h -r 1 -d forever -i 1'",
-						"CMDFINISH='rb_druid_rules.rb -t _default -p none -r 1 -d forever -i 1'"
+						{ "Fn::Join" : [ "", [ "CMDFINISH_MASTER='rb_druid_rules.rb -t _default -p pt24h -r 1 -d forever -i 1",
+							{ "Fn::If" : [ "AdminPasswordCreation",
+								{ "Fn::Join" : [ "", [ "source /etc/profile.d/rvm.sh; pushd /opt/rb/var/www/rb-rails; rails runner \"User.find_by(login: 'admin').update(password: '",
+									{ "Ref" : "AdminPasswd" } , "')\"; popd'" ] ]
+								}, "'" ]
+							}
+						] ] },
+						{ "Fn::Join" : [ "", [ "CMDFINISH_MASTER='rb_druid_rules.rb -t _default -p none -r 1 -d forever -i 1",
+							{ "Fn::If" : [ "AdminPasswordCreation",
+								{ "Fn::Join" : [ "", [ "source /etc/profile.d/rvm.sh; pushd /opt/rb/var/www/rb-rails; rails runner \"User.find_by(login: 'admin').update(password: '",
+									{ "Ref" : "AdminPasswd" } , "')\"; popd'" ] ]
+								}, "'" ]
+							}
+						] ] }
 					] },
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
