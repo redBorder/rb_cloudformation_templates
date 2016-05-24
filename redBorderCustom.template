@@ -146,7 +146,8 @@
 		},
 		"AdminPasswd" : {
 			"Description" : "(CONDITION) Password for admin user. If is empty, default password will be used",
-			"Type" : "String"
+			"Type" : "String",
+			"NoEcho" : "true"
 		},
 
 		"CDOMAIN" : {
