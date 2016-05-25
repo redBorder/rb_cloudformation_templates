@@ -147,7 +147,9 @@
 		"AdminPasswd" : {
 			"Description" : "(CONDITION) Password for admin user. If is empty, default password will be used",
 			"Type" : "String",
-			"NoEcho" : "true"
+			"NoEcho" : "true",
+			"MinLength" : "8",
+			"ConstraintDescription" : "Minimal length for password is 8 characters"
 		},
 
 		"CDOMAIN" : {
@@ -1658,17 +1660,17 @@
 					"ENRICHMODE=samza\n",
 					{ "Fn::If" : [ "middlemanagerRoleCreation", { "Fn::Join" : [ "", [ "MMDOWNALARMNAME=\"", { "Ref" : "middlemanagerLowCapacityAlarm" }, "\"\n" ] ] } , "" ] },
 					{ "Fn::If" : [ "historicalhotRoleCreation",
-						{ "Fn::Join" : [ "", [ "CMDFINISH_MASTER='rb_druid_rules.rb -t _default -p pt24h -r 1 -d forever -i 1",
+						{ "Fn::Join" : [ "", [ "CMDFINISH_MASTER='rb_druid_rules.rb -t _default -p pt24h -r 1 -d forever -i 1; ",
 							{ "Fn::If" : [ "AdminPasswordCreation",
-								{ "Fn::Join" : [ "", [ "source /etc/profile.d/rvm.sh; pushd /opt/rb/var/www/rb-rails; rails runner \"User.find_by(login: 'admin').update(password: '",
-									{ "Ref" : "AdminPasswd" } , "')\"; popd'" ] ]
+								{ "Fn::Join" : [ "", [ "source /etc/profile.d/rvm.sh; pushd /opt/rb/var/www/rb-rails; rails runner \"User.find_by(login: \\\"admin\\\").update(password: \\\"",
+									{ "Ref" : "AdminPasswd" } , "\\\")\"; popd'" ] ]
 								}, "'" ]
 							}
 						] ] },
-						{ "Fn::Join" : [ "", [ "CMDFINISH_MASTER='rb_druid_rules.rb -t _default -p none -r 1 -d forever -i 1",
+						{ "Fn::Join" : [ "", [ "CMDFINISH_MASTER='rb_druid_rules.rb -t _default -p pt24h -r 1 -d forever -i 1; ",
 							{ "Fn::If" : [ "AdminPasswordCreation",
-								{ "Fn::Join" : [ "", [ "source /etc/profile.d/rvm.sh; pushd /opt/rb/var/www/rb-rails; rails runner \"User.find_by(login: 'admin').update(password: '",
-									{ "Ref" : "AdminPasswd" } , "')\"; popd'" ] ]
+								{ "Fn::Join" : [ "", [ "source /etc/profile.d/rvm.sh; pushd /opt/rb/var/www/rb-rails; rails runner \"User.find_by(login: \\\"admin\\\").update(password: \\\"",
+									{ "Ref" : "AdminPasswd" } , "\\\")\"; popd'" ] ]
 								}, "'" ]
 							}
 						] ] }
