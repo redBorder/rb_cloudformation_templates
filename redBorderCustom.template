@@ -1657,22 +1657,24 @@
 					"" ] },
 					"ENRICHMODE=samza\n",
 					{ "Fn::If" : [ "middlemanagerRoleCreation", { "Fn::Join" : [ "", [ "MMDOWNALARMNAME=\"", { "Ref" : "middlemanagerLowCapacityAlarm" }, "\"\n" ] ] } , "" ] },
+					"CMDFINISH_MASTER='bash /opt/rb/etc/cmdfinish-master.sh'\n",
+					"\n\n",
+					"cat > /opt/rb/etc/cmdfinish-master.sh <<- _RBEOF2_\n",
+					"#!/bin/bash\n\n",
 					{ "Fn::If" : [ "historicalhotRoleCreation",
-						{ "Fn::Join" : [ "", [ "CMDFINISH_MASTER='rb_druid_rules.rb -t _default -p pt24h -r 1 -d forever -i 1",
-							{ "Fn::If" : [ "AdminPasswordCreation",
-								{ "Fn::Join" : [ "", [ "source /etc/profile.d/rvm.sh; pushd /opt/rb/var/www/rb-rails; rails runner \"User.find_by(login: 'admin').update(password: '",
-									{ "Ref" : "AdminPasswd" } , "')\"; popd'" ] ]
-								}, "'" ]
-							}
-						] ] },
-						{ "Fn::Join" : [ "", [ "CMDFINISH_MASTER='rb_druid_rules.rb -t _default -p none -r 1 -d forever -i 1",
-							{ "Fn::If" : [ "AdminPasswordCreation",
-								{ "Fn::Join" : [ "", [ "source /etc/profile.d/rvm.sh; pushd /opt/rb/var/www/rb-rails; rails runner \"User.find_by(login: 'admin').update(password: '",
-									{ "Ref" : "AdminPasswd" } , "')\"; popd'" ] ]
-								}, "'" ]
-							}
-						] ] }
+						"rb_druid_rules.rb -t _default -p pt24h -r 1 -d forever -i 1\n",
+						"rb_druid_rules.rb -t _default -p none -r 1 -d forever -i 1\n"
 					] },
+					"\n",
+					{ "Fn::If" : [ "AdminPasswordCreation",
+						{ "Fn::Join" : [ "", [
+							"source /etc/profile.d/rvm.sh\n",
+							"pushd /opt/rb/var/www/rb-rails\n",
+							"rails runner \"User.find_by(login: 'admin').update(password: '", { "Ref" : "AdminPasswd" }, "')\"\n",
+							"popd\n"
+						] ] },
+					"" ] },
+					"_RBEOF2_\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -1683,7 +1685,7 @@
 					"  }\n",
 					"}\n",
 					"_RBEOF2_\n",
-					". /opt/rb/bin/rb_set_aws_interface.sh",
+					". /opt/rb/bin/rb_set_aws_interface.sh\n",
 					"\n"
 				] ] } }
 			}
