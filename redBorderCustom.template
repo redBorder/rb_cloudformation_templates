@@ -147,7 +147,9 @@
 		"AdminPasswd" : {
 			"Description" : "(CONDITION) Password for admin user. If is empty, default password will be used",
 			"Type" : "String",
-			"NoEcho" : "true"
+			"NoEcho" : "true",
+			"MinLength" : "8",
+			"ConstraintDescription" : "Minimal length for password is 8 characters"
 		},
 
 		"CDOMAIN" : {
