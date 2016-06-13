@@ -1,7 +1,7 @@
 {
 	"AWSTemplateFormatVersion" : "2010-09-09",
 
-	"Description" : "AWS CloudFormation template to deploy redBorder Manager",
+	"Description" :	"AWS CloudFormation template to deploy redBorder Manager. Copyright (c) 2016 ENEO Tecnología S.L. GNU Affero General Public License",
 
 	"Metadata" : {
 		"AWS::CloudFormation::Interface" : {
