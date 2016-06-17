@@ -1,7 +1,7 @@
 {
 	"AWSTemplateFormatVersion" : "2010-09-09",
 
-	"Description" :	"AWS CloudFormation template to deploy redBorder Manager. Copyright (c) 2016 ENEO Tecnología S.L. GNU Affero General Public License",
+	"Description" :	"AWS CloudFormation template to deploy redBorder Manager. Copyright (c) 2016 ENEO Tecnologia S.L. GNU Affero General Public License",
 
 	"Metadata" : {
 		"AWS::CloudFormation::Interface" : {
@@ -1665,15 +1665,15 @@
 					"cat > /opt/rb/etc/cmdfinish-master.sh <<- _RBEOF2_\n",
 					"#!/bin/bash\n\n",
 					{ "Fn::If" : [ "historicalhotRoleCreation",
-						"rb_druid_rules.rb -t _default -p pt24h -r 1 -d forever -i 1\n",
-						"rb_druid_rules.rb -t _default -p none -r 1 -d forever -i 1\n"
+						"/opt/rb/bin/rb_druid_rules.rb -t _default -p pt24h -r 1 -d forever -i 1\n",
+						"/opt/rb/bin/rb_druid_rules.rb -t _default -p none -r 1 -d forever -i 1\n"
 					] },
 					"\n",
 					{ "Fn::If" : [ "AdminPasswordCreation",
 						{ "Fn::Join" : [ "", [
 							"source /etc/profile.d/rvm.sh\n",
 							"pushd /opt/rb/var/www/rb-rails\n",
-							"rails runner \"User.find_by(login: 'admin').update(password: '", { "Ref" : "AdminPasswd" }, "')\"\n",
+							"RAILS_ENV=\"production\" rails runner \"User.find_by(login: 'admin').update(password: '", { "Ref" : "AdminPasswd" }, "')\"\n",
 							"popd\n"
 						] ] },
 					"" ] },
