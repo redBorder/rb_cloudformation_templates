@@ -1,7 +1,7 @@
 {
 	"AWSTemplateFormatVersion" : "2010-09-09",
 
-	"Description" :	"AWS CloudFormation template to deploy redBorder Manager. Copyright (c) 2016 ENEO Tecnología S.L. GNU Affero General Public License",
+	"Description" :	"AWS CloudFormation template to deploy redBorder Manager. Copyright (c) 2016 ENEO Tecnologia S.L. GNU Affero General Public License",
 
 	"Metadata" : {
 		"AWS::CloudFormation::Interface" : {
@@ -71,8 +71,8 @@
 		"InstanceSize" : {
 			"Description" : "(REQUIRED) Node performance (instance types). Instance types will be choosen automatically in function of this parameter",
 			"Type" : "String",
-			"AllowedValues" : [ "small", "medium", "large" ],
-			"Default" : "medium"
+			"AllowedValues" : [ "micro", "small", "medium", "large" ],
+			"Default" : "small"
 		}, 
 		"KeyName" : {
 			"Description" : "(REQUIRED) Name of an existing EC2 KeyPair to enable SSH access to the instances",
@@ -126,29 +126,29 @@
 			"5"  : { "master": "1", "custom":"4", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
 			"6"  : { "master": "1", "custom":"5", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
 			"7"  : { "master": "1", "custom":"6", "corezk":"0", "kafka":"0", "http2k": "0", "web":"0", "broker":"0", "middlemanager":"0", "historical":"0", "historicalhot":"0", "samza":"0" },
-			"8"  : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "0", "web":"1", "broker":"1", "middlemanager":"1", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"9"  : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "1", "web":"1", "broker":"1", "middlemanager":"1", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"10" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "1", "web":"1", "broker":"1", "middlemanager":"2", "historical":"1", "historicalhot":"1", "samza":"1" },
+			"8"  : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "1", "web":"1", "broker":"1", "middlemanager":"1", "historical":"1", "historicalhot":"0", "samza":"1" },
+			"9"  : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"1", "historical":"1", "historicalhot":"0", "samza":"1" },
+			"10" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"2", "historical":"1", "historicalhot":"0", "samza":"1" },
 			"11" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"2", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"12" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"2", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"13" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"3", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"14" : { "master": "0", "custom":"0", "corezk":"3", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"2", "historical":"1", "historicalhot":"1", "samza":"1" },
+			"12" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"2", "historical":"1", "historicalhot":"1", "samza":"2" },
+			"13" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"1", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"3", "historical":"1", "historicalhot":"1", "samza":"2" },
+			"14" : { "master": "0", "custom":"0", "corezk":"1", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"3", "historical":"1", "historicalhot":"1", "samza":"2" },
 			"15" : { "master": "0", "custom":"0", "corezk":"3", "kafka":"2", "http2k": "1", "web":"2", "broker":"1", "middlemanager":"3", "historical":"1", "historicalhot":"1", "samza":"1" },
-			"16" : { "master": "0", "custom":"0", "corezk":"3", "kafka":"2", "http2k": "2", "web":"2", "broker":"1", "middlemanager":"3", "historical":"1", "historicalhot":"1", "samza":"1" }
+			"16" : { "master": "0", "custom":"0", "corezk":"3", "kafka":"2", "http2k": "2", "web":"2", "broker":"1", "middlemanager":"3", "historical":"1", "historicalhot":"1", "samza":"2" }
 		},
 
 		"InstanceTypeMap" : {
-			"master" :        { "small":"m4.xlarge",      "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
-			"custom" :        { "small":"m4.large",       "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
-			"corezk" :        { "small":"m4.xlarge",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
-			"kafka" :         { "small":"i2.xlarge",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
-			"http2k" :        { "small":"c4.large",       "medium":"c4.large",        "large":"c4.2xlarge"       },
-			"web" :           { "small":"c4.xlarge",      "medium":"c4.xlarge",       "large":"c4.4xlarge"       },
-			"broker" :        { "small":"r3.xlarge",      "medium":"r3.xlarge",       "large":"r3.4xlarge"       },
-			"middlemanager" : { "small":"r3.xlarge",      "medium":"r3.2xlarge",      "large":"r3.8xlarge"       },
-			"historical" :    { "small":"c4.2xlarge",     "medium":"c4.2xlarge",      "large":"c4.8xlarge"       },
-			"historicalhot" : { "small":"r3.xlarge",      "medium":"r3.xlarge",       "large":"m4.10xlarge"      },
-			"samza" :         { "small":"c4.2xlarge",     "medium":"c4.4xlarge",      "large":"c4.8xlarge"       }
+			"master" :        { "micro":"m4.large",		"small":"m4.xlarge",      "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
+			"custom" :        { "micro":"t2.small",  	"small":"m4.large",       "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
+			"corezk" :        { "micro":"t2.medium",  	"small":"m4.xlarge",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
+			"kafka" :         { "micro":"t2.medium",  	"small":"i2.xlarge",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
+			"http2k" :        { "micro":"t2.micro",  	"small":"c4.large",       "medium":"c4.large",        "large":"c4.2xlarge"       },
+			"web" :           { "micro":"t2.micro", 	"small":"c4.xlarge",      "medium":"c4.xlarge",       "large":"c4.4xlarge"       },
+			"broker" :        { "micro":"t2.micro",  	"small":"r3.xlarge",      "medium":"r3.xlarge",       "large":"r3.4xlarge"       },
+			"middlemanager" : { "micro":"r3.large",  	"small":"r3.xlarge",      "medium":"r3.2xlarge",      "large":"r3.8xlarge"       },
+			"historical" :    { "micro":"t2.micro",  	"small":"c4.2xlarge",     "medium":"c4.2xlarge",      "large":"c4.8xlarge"       },
+			"historicalhot" : { "micro":"t2.small",  	"small":"r3.xlarge",      "medium":"r3.xlarge",       "large":"m4.10xlarge"      },
+			"samza" :         { "micro":"c4.2xlarge",	"small":"c4.2xlarge",     "medium":"c4.4xlarge",      "large":"c4.8xlarge"       }
 		}
 	},
 
@@ -206,6 +206,9 @@
 		},
 		"EnableNotifications" : {
 			"Fn::Not" : [ { "Fn::Equals" : [ "", { "Ref" : "Email" } ] } ]
+		},
+		"SizeMicro" : {
+			"Fn::Equals" : [ "micro", { "Ref" : "InstanceSize" } ]
 		}
 	},
 	
@@ -1510,7 +1513,7 @@
 				"BlockDeviceMappings" : [ {
 					"DeviceName" : "/dev/sda1",
 					"Ebs" : {
-						"VolumeSize" : "50",
+						"VolumeSize" : { "Fn::If" : [ "SizeMicro", "200", "50" ] },
 						"VolumeType" : "gp2",
 						"DeleteOnTermination" : "true"
 					}
