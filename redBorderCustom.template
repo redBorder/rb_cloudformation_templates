@@ -1,7 +1,7 @@
 {
 	"AWSTemplateFormatVersion" : "2010-09-09",
 
-	"Description" :	"AWS CloudFormation template to deploy redBorder Manager. Copyright (c) 2016 ENEO Tecnología S.L. GNU Affero General Public License",
+	"Description" :	"AWS CloudFormation template to deploy redBorder Manager. Copyright (c) 2016 ENEO Tecnologia S.L. GNU Affero General Public License",
 
 	"Metadata" : {
 		"AWS::CloudFormation::Interface" : {
@@ -145,9 +145,12 @@
 			"Default" : "true"
 		},
 		"AdminPasswd" : {
-			"Description" : "(CONDITION) Password for admin user. If is empty, default password will be used",
+			"Description" : "(CONDITION) Password for admin user. If is empty, default password will be used. Must have a minimal length of 8 characters",
 			"Type" : "String",
-			"NoEcho" : "true"
+			"NoEcho" : "true",
+			"MinLength" : "0",
+			"MaxLength" : "41",
+			"ConstraintDescription" : "Minimal length for password is 8 characters and maximun 41"
 		},
 
 		"CDOMAIN" : {
@@ -1156,27 +1159,27 @@
 					"IpProtocol" : "tcp",
 					"FromPort" : { "Fn::If" : [ "openVPNInstanceCreation", "22", "6666" ] },
 					"ToPort" : { "Fn::If" : [ "openVPNInstanceCreation", "22", "6666" ] },
-					"CidrIp" : { "Fn::If" : [ "openVPNInstanceCreation", "172.16.1.0/24", "0.0.0.0/0" ] } 
+					"CidrIp" : { "Fn::If" : [ "openVPNInstanceCreation", { "Fn::GetAtt" : [ "PublicSubnetInfo", "CIDRBlock" ] }, "0.0.0.0/0" ] }
 				}, {
 					"IpProtocol" : "tcp",
 					"FromPort" : "80",
 					"ToPort" : "80",
-					"CidrIp" : "172.16.1.0/24"
+					"CidrIp" : { "Fn::GetAtt" : [ "PublicSubnetInfo", "CIDRBlock" ] }
 				}, {
 					"IpProtocol" : "tcp",
 					"FromPort" : "7979",
 					"ToPort" : "7979",
-					"CidrIp" : "172.16.1.0/24"
+					"CidrIp" : { "Fn::GetAtt" : [ "PublicSubnetInfo", "CIDRBlock" ] }
 				}, {
 					"IpProtocol" : "tcp",
 					"FromPort" : "7980",
 					"ToPort" : "7980",
-					"CidrIp" : "172.16.1.0/24"
+					"CidrIp" : { "Fn::GetAtt" : [ "PublicSubnetInfo", "CIDRBlock" ] }
 				},  {
 					"IpProtocol" : "tcp",
 					"FromPort" : "9092",
 					"ToPort" : "9092",
-					"CidrIp" : "172.16.1.0/24"
+					"CidrIp" : { "Fn::GetAtt" : [ "PublicSubnetInfo", "CIDRBlock" ] }
 				} ],
 				"Tags" : [ {
 					"Key" : "Cluster",
@@ -1657,22 +1660,24 @@
 					"" ] },
 					"ENRICHMODE=samza\n",
 					{ "Fn::If" : [ "middlemanagerRoleCreation", { "Fn::Join" : [ "", [ "MMDOWNALARMNAME=\"", { "Ref" : "middlemanagerLowCapacityAlarm" }, "\"\n" ] ] } , "" ] },
+					"CMDFINISH_MASTER='bash /opt/rb/etc/cmdfinish-master.sh'\n",
+					"\n\n",
+					"cat > /opt/rb/etc/cmdfinish-master.sh <<- _RBEOF2_\n",
+					"#!/bin/bash\n\n",
 					{ "Fn::If" : [ "historicalhotRoleCreation",
-						{ "Fn::Join" : [ "", [ "CMDFINISH_MASTER='rb_druid_rules.rb -t _default -p pt24h -r 1 -d forever -i 1",
-							{ "Fn::If" : [ "AdminPasswordCreation",
-								{ "Fn::Join" : [ "", [ "source /etc/profile.d/rvm.sh; pushd /opt/rb/var/www/rb-rails; rails runner \"User.find_by(login: 'admin').update(password: '",
-									{ "Ref" : "AdminPasswd" } , "')\"; popd'" ] ]
-								}, "'" ]
-							}
-						] ] },
-						{ "Fn::Join" : [ "", [ "CMDFINISH_MASTER='rb_druid_rules.rb -t _default -p none -r 1 -d forever -i 1",
-							{ "Fn::If" : [ "AdminPasswordCreation",
-								{ "Fn::Join" : [ "", [ "source /etc/profile.d/rvm.sh; pushd /opt/rb/var/www/rb-rails; rails runner \"User.find_by(login: 'admin').update(password: '",
-									{ "Ref" : "AdminPasswd" } , "')\"; popd'" ] ]
-								}, "'" ]
-							}
-						] ] }
+						"/opt/rb/bin/rb_druid_rules.rb -t _default -p pt24h -r 1 -d forever -i 1\n",
+						"/opt/rb/bin/rb_druid_rules.rb -t _default -p none -r 1 -d forever -i 1\n"
 					] },
+					"\n",
+					{ "Fn::If" : [ "AdminPasswordCreation",
+						{ "Fn::Join" : [ "", [
+							"source /etc/profile.d/rvm.sh\n",
+							"pushd /opt/rb/var/www/rb-rails\n",
+							"RAILS_ENV=\"production\" rails runner \"User.find_by(login: 'admin').update(password: '", { "Ref" : "AdminPasswd" }, "')\"\n",
+							"popd\n"
+						] ] },
+					"" ] },
+					"_RBEOF2_\n",
 					"\n\n",
 					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
 					"{\n",
@@ -1683,7 +1688,7 @@
 					"  }\n",
 					"}\n",
 					"_RBEOF2_\n",
-					". /opt/rb/bin/rb_set_aws_interface.sh",
+					". /opt/rb/bin/rb_set_aws_interface.sh\n",
 					"\n"
 				] ] } }
 			}
@@ -3296,6 +3301,55 @@
 				"ServiceToken": { "Fn::GetAtt" : [ "route53cleanFunction", "Arn" ] },
 				"PublicHostedZone": { "Ref": "PublicHostedZone" },
 				"PrivateHostedZone": { "Ref" : "PrivateHostedZone" }
+			}
+		},
+		"GetPublicSubnetInfoFunction" : {
+			"Type" : "AWS::Lambda::Function",
+			"Properties" : {
+				"Code" : {
+					"S3Bucket": { "Fn::Join" : [ "-", [ "rblambdafunctions", { "Ref" : "AWS::Region" } ] ] },
+					"S3Key": "rb_cfn_get_subnet_info.zip"
+				},
+				"Handler" : "index.handler",
+				"Runtime": "nodejs4.3",
+				"Timeout": "10",
+				"Role" : { "Fn::GetAtt" : [ "PublicSubnetInfoRole", "Arn" ] }
+			}
+		},
+		"PublicSubnetInfo" : {
+			"Type" : "Custom::PublicSubnetInfo",
+			"Properties" : {
+				"ServiceToken" : { "Fn::GetAtt" : [ "GetPublicSubnetInfoFunction", "Arn" ] },
+				"SubnetId" : { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet" }, { "Ref" : "PublicSubnetId" } ] }
+			}
+		},
+		"PublicSubnetInfoRole" : {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [{
+						"Effect": "Allow",
+						"Principal": {"Service": ["lambda.amazonaws.com"]},
+						"Action": ["sts:AssumeRole"]
+					}]
+				},
+				"Path": "/",
+				"Policies": [{
+					"PolicyName": "root",
+					"PolicyDocument": {
+						"Version": "2012-10-17",
+						"Statement": [ {
+							"Effect": "Allow",
+							"Action": ["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],
+							"Resource": "arn:aws:logs:*:*:*"
+						},{
+							"Effect": "Allow",
+							"Action": ["ec2:DescribeSubnets"],
+							"Resource": "*"
+						} ]
+					}
+				} ]
 			}
 		}
 	},
