@@ -170,7 +170,8 @@
 		"CorezkInstanceType" : {
 			"Description" : "(REQUIRED) instance type for corezk role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.medium", "t2.large",
+								"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 								"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 								"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 								"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -198,7 +199,8 @@
 		"KafkaInstanceType" : {
 			"Description" : "(REQUIRED) instance type for kafka role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -227,7 +229,8 @@
 		"WebInstanceType" : {
 			"Description" : "(REQUIRED) instance type for web role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.small", "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -256,7 +259,8 @@
 		"Http2kInstanceType" : {
 			"Description" : "(REQUIRED) instance type for http2k role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.micro", "t2.small", "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -286,7 +290,8 @@
 		"MiddlemanagerInstanceType" : {
 			"Description" : "(REQUIRED) instance type for middleManager role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -315,7 +320,8 @@
 		"BrokerInstanceType" : {
 			"Description" : "(REQUIRED) instance type for broker role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.micro", "t2.small", "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -344,7 +350,8 @@
 		"HistoricalInstanceType" : {
 			"Description" : "(REQUIRED) instance type for historical role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.micro", "t2.small", "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -373,7 +380,8 @@
 		"HistoricalhotInstanceType" : {
 			"Description" : "(REQUIRED) instance type for historical hot role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.small", "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -431,7 +439,8 @@
 		"NmspdInstanceType" : {
 			"Description" : "(REQUIRED) instance type for samza role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.micro", "t2.small", "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -460,7 +469,8 @@
 		"HistoricalGenericInstanceType" : {
 			"Description" : "(REQUIRED) instance type for HistoricalGeneric role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.micro", "t2.small", "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
