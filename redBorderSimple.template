@@ -138,9 +138,9 @@
 		},
 
 		"InstanceTypeMap" : {
-			"master" :        { "micro":"m4.large",		"small":"m4.xlarge",      "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
+			"master" :        { "micro":"m4.xlarge",	"small":"m4.xlarge",      "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
 			"custom" :        { "micro":"t2.small",  	"small":"m4.large",       "medium":"m4.2xlarge",      "large":"m4.4xlarge"       },
-			"corezk" :        { "micro":"t2.medium",  	"small":"m4.xlarge",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
+			"corezk" :        { "micro":"t2.large",  	"small":"m4.xlarge",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
 			"kafka" :         { "micro":"t2.medium",  	"small":"i2.xlarge",      "medium":"i2.xlarge",       "large":"i2.2xlarge"       },
 			"http2k" :        { "micro":"t2.micro",  	"small":"c4.large",       "medium":"c4.large",        "large":"c4.2xlarge"       },
 			"web" :           { "micro":"t2.micro", 	"small":"c4.xlarge",      "medium":"c4.xlarge",       "large":"c4.4xlarge"       },
