@@ -25,6 +25,7 @@
 									"HistoricalInstanceType", "HistoricalEBSSize", "MinHistoricalInstances",
 									"HistoricalhotInstanceType", "HistoricalhotEBSSize", "MinHistoricalhotInstances",
 									"SamzaInstanceType", "SamzaEBSSize", "MinSamzaInstances",
+									"NmspdInstanceType", "NmspdEBSSize", "MinNmspdInstances",
 									"HistoricalGenericInstanceType", "HistoricalGenericEBSSize", "HistoricalGenericInstances"
 				]
 			}, {
@@ -85,6 +86,10 @@
 				"SamzaInstanceType" : { "default" : "Samza - instance size" },
 				"SamzaEBSSize" : { "default" : "Samza - EBS disk size" },
 				"MinSamzaInstances" : { "default" : "Samza - minimal number of instances" },
+
+				"NmspdInstanceType" : { "default" : "Nmspd - instance size" },
+				"NmspdEBSSize" : { "default" : "Nmspd - EBS disk size" },
+				"MinNmspdInstances" : { "default" : "Nmspd - minimal number of instances" },
 
 				"HistoricalInstanceType" : { "default" : "Historical - instance size" },
 				"HistoricalEBSSize" : { "default" : "Historical - EBS disk size" },
@@ -170,7 +175,8 @@
 		"CorezkInstanceType" : {
 			"Description" : "(REQUIRED) instance type for corezk role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.large",
+								"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 								"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 								"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 								"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -198,7 +204,8 @@
 		"KafkaInstanceType" : {
 			"Description" : "(REQUIRED) instance type for kafka role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -227,7 +234,8 @@
 		"WebInstanceType" : {
 			"Description" : "(REQUIRED) instance type for web role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.small", "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -256,7 +264,8 @@
 		"Http2kInstanceType" : {
 			"Description" : "(REQUIRED) instance type for http2k role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.micro", "t2.small", "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -286,7 +295,8 @@
 		"MiddlemanagerInstanceType" : {
 			"Description" : "(REQUIRED) instance type for middleManager role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -315,7 +325,8 @@
 		"BrokerInstanceType" : {
 			"Description" : "(REQUIRED) instance type for broker role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.micro", "t2.small", "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -344,7 +355,8 @@
 		"HistoricalInstanceType" : {
 			"Description" : "(REQUIRED) instance type for historical role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.micro", "t2.small", "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -373,7 +385,8 @@
 		"HistoricalhotInstanceType" : {
 			"Description" : "(REQUIRED) instance type for historical hot role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.small", "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -428,10 +441,41 @@
 			"ConstraintDescription" : "number of nodes must between 1 and 10"
 		},
 
+		"NmspdInstanceType" : {
+			"Description" : "(REQUIRED) instance type for samza role",
+			"Type" : "String",
+			"AllowedValues" : [ "t2.micro", "t2.small", "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
+				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
+				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
+				"r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge"
+			],
+			"Default" : "c4.large",
+			"ConstraintDescription" : "must be an allowed instance type"
+		},
+		"NmspdEBSSize" : {
+			"Description" : "(REQUIRED) EBS Volume (SSD) size in GB for samza instances",
+			"Type" : "Number",
+			"MinValue" : "12",
+			"MaxValue" : "16384",
+			"Default" : "12",
+			"ConstraintDescription" : "size must be between 12 and 16384 GB"
+		},
+		"MinNmspdInstances" : {
+			"Description" : "(REQUIRED) minimun number of nodes for samza role.",
+			"Type" : "Number",
+			"MinValue" : "0",
+			"MaxValue" : "10",
+			"Default" : "0",
+			"ConstraintDescription" : "number of nodes must between 1 and 10"
+		},
+
 		"HistoricalGenericInstanceType" : {
 			"Description" : "(REQUIRED) instance type for HistoricalGeneric role",
 			"Type" : "String",
-			"AllowedValues" : [ "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+			"AllowedValues" : [ "t2.micro", "t2.small", "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
 				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
 				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
 				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
@@ -592,6 +636,9 @@
 		},
 		"samzaRoleCreation" : {
 			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Ref" : "MinSamzaInstances" } ] } ]
+		},
+		"nmspdRoleCreation" : {
+			"Fn::Not" : [ { "Fn::Equals" : [ "0",  { "Ref" : "MinNmspdInstances" } ] } ]
 		},
 		"S3Creation" : {
 			"Fn::Equals" : [ "", { "Ref" : "PreviousS3Bucket" } ]
@@ -3132,6 +3179,181 @@
 					". /opt/rb/bin/rb_set_aws_interface.sh",
 					"\n"
 				] ] } }
+			}
+		},
+
+		"nmspdGroup" : {
+			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"Condition" : "nmspdRoleCreation",
+			"DependsOn" : "kafkaGroup",
+			"Properties" : {
+				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
+				"LaunchConfigurationName" : { "Ref" : "nmspdLaunch" },
+				"MinSize" : { "Ref" : "MinNmspdInstances" },
+				"MaxSize" : { "Ref" : "NmspdEBSSize"},
+				"NotificationConfiguration" : {
+					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
+					"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
+						"autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+						"autoscaling:EC2_INSTANCE_TERMINATE",
+						"autoscaling:EC2_INSTANCE_TERMINATE_ERROR" ]
+				},
+				"Tags" : [ {
+					"Key" : "Role",
+					"Value" : "nmspd",
+					"PropagateAtLaunch" : "true"
+				},{
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" },
+					"PropagateAtLaunch" : "true"
+				},{
+					"Key" : "Name",
+					"Value" : { "Fn::Join" : [ "", [
+						{ "Ref" : "AWS::StackName" }, " - nmspd" ] ] },
+					"PropagateAtLaunch" : "true"
+				} ]
+			},
+			"CreationPolicy" : {
+				"ResourceSignal" : {
+					"Count" : { "Ref" : "MinNmspdInstances" },
+					"Timeout" : "PT200M"
+				}
+			}
+		},
+		"nmspdLaunch" : {
+			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Condition" : "nmspdRoleCreation",
+			"Properties" : {
+				"AssociatePublicIpAddress" : "true",
+				"ImageId" : { "Fn::GetAtt": [ "redBorderAMILookUpInfo", "Id" ] },
+				"SecurityGroups" : [ { "Ref" : "redBorderPublicSecurityGroup" } ],
+				"KeyName"        : { "Ref" : "KeyName" },
+				"InstanceType" : { "Ref" : "NmspdInstanceType" },
+				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
+				"InstanceMonitoring" : "true",
+				"BlockDeviceMappings" : [ {
+					"DeviceName" : "/dev/sda1",
+					"Ebs" : {
+						"VolumeSize" : "50",
+						"VolumeType" : "gp2",
+						"DeleteOnTermination" : "true"
+					}
+				},  {
+					"DeviceName" : "/dev/sdb",
+					"VirtualName" : "ephemeral0"
+				},  {
+					"DeviceName" : "/dev/sdc",
+					"VirtualName" : "ephemeral1"
+				} ],
+				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+					"#!/bin/bash\n",
+					"NODEROLE=nmspd\n",
+					"NODESERVICES=\n",
+					"CDOMAIN=", { "Ref" : "CDOMAIN" }, "\n",
+					"PUBLIC_HOSTEDZONE_ID=", { "Ref" : "PublicHostedZone" }, "\n",
+					"PRIVATE_HOSTEDZONE_ID=", { "Ref" : "PrivateHostedZone" }, "\n",
+					"REGION=", { "Ref" : "AWS::Region" }, "\n",
+					"VPCID=", { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] }, "\n",
+					"PRIVATE_SECURITY_GROUP=", { "Ref" : "redBorderPrivateSecurityGroup" }, "\n",
+					"STACKNAME=", { "Ref" : "AWS::StackName" }, "\n",
+					"AUTOSCALINGGROUPNAME=nmspdGroup\n",
+					"SUBNET_ID=", { "Fn::If" : [ "CreatePrivateSubnet", { "Ref" : "PrivateSubnet"  }, { "Ref" : "PrivateSubnetId"} ] }, "\n",
+					"S3BUCKET=", { "Fn::If" : [ "S3Creation", { "Ref" : "S3Bucket" }, { "Ref" : "PreviousS3Bucket" } ] }, " \n",
+					{ "Fn::If" : [ "regionNVirginia",
+						"S3HOST=s3.amazonaws.com\n",
+						{ "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }
+					] },
+					{ "Fn::If" : [ "regionNVirginia",
+						"S3HOST=s3.amazonaws.com\n",
+						{ "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }
+					] },
+					"AWS_ACCESS_KEY=\"", { "Ref" : "IAMAccessKey" }, "\"\n",
+					"AWS_SECRET_KEY=\"", { "Fn::GetAtt" : [ "IAMAccessKey", "SecretAccessKey" ] }, "\"\n",
+					"\n\n",
+					"cat > /opt/rb/etc/chef/initialdata.json <<- _RBEOF2_\n",
+					"{\n",
+					"  \"redBorder\" : {\n",
+					"    \"aws\" : {\n",
+					"      \"cloudwatch\" : \"true\"\n",
+					"    }\n",
+					"  }\n",
+					"}\n",
+					"_RBEOF2_\n",
+					". /opt/rb/bin/rb_set_aws_interface.sh",
+					"\n"
+				] ] } }
+			}
+		},
+		"nmspdLifecycleHook" : {
+			"Type" : "AWS::AutoScaling::LifecycleHook",
+			"Condition" : "nmspdRoleCreation",
+			"Properties" : {
+				"AutoScalingGroupName" : { "Ref" : "nmspdGroup"  },
+				"LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
+				"NotificationTargetARN" : { "Fn::GetAtt" : [ "SQSQueue", "Arn" ] },
+				"RoleARN" : { "Fn::GetAtt" : [ "IAMRoleLifecycleHook", "Arn" ] }
+			}
+		},
+		"nmspdkHighCPUAlarm" : {
+			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "nmspdRoleCreation",
+			"Properties" : {
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - nmspdHighCPUAlarm" ] ] },
+				"AlarmDescription" : "Alarm for nmspd autoscaling. When CPU is so high, triggers a scaling out",
+				"Namespace" : "AWS/EC2",
+				"MetricName" : "CPUUtilization",
+				"Dimensions" : [ {
+					"Name" : "AutoScalingGroupName",
+					"Value" : { "Ref" : "nmspdGroup" }
+				} ],
+				"EvaluationPeriods" : "1",
+				"Period" : "300",
+				"ComparisonOperator" : "GreaterThanThreshold",
+				"Threshold" : "70",
+				"Statistic" : "Average",
+				"ActionsEnabled" : "true",
+				"AlarmActions" : [ { "Ref" : "nmspdScaleUpPolicy" } ]
+			}
+		},
+		"nmspdScaleUpPolicy" : {
+			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "nmspdRoleCreation",
+			"Properties" : {
+				"AdjustmentType" : "ChangeInCapacity",
+				"AutoScalingGroupName" : { "Ref" : "nmspdGroup" },
+				"Cooldown" : "900",
+				"ScalingAdjustment" : "1"
+			}
+		},
+		"nmspdLowCPUAlarm" : {
+			"Type" : "AWS::CloudWatch::Alarm",
+			"Condition" : "nmspdRoleCreation",
+			"Properties" : {
+				"AlarmName" : { "Fn::Join" : [ "", [ { "Ref" : "AWS::StackName" }, " - nmspdLowCPUAlarm" ] ] },
+				"AlarmDescription" : "Alarm for nsmpd autoscaling. When CPU is so low, triggers a scaling in",
+				"Namespace" : "AWS/EC2",
+				"MetricName" : "CPUUtilization",
+				"Dimensions" : [ {
+					"Name" : "AutoScalingGroupName",
+					"Value" : { "Ref" : "nmspdGroup" }
+				} ],
+				"EvaluationPeriods" : "3",
+				"Period" : "300",
+				"ComparisonOperator" : "LessThanThreshold",
+				"Threshold" : "35",
+				"Statistic" : "Average",
+				"ActionsEnabled" : "true",
+				"AlarmActions" : [ { "Ref" : "nmspdScaleDownPolicy" } ]
+			}
+		},
+		"nmspdScaleDownPolicy" : {
+			"Type" : "AWS::AutoScaling::ScalingPolicy",
+			"Condition" : "nmspdRoleCreation",
+			"Properties" : {
+				"AdjustmentType" : "ChangeInCapacity",
+				"AutoScalingGroupName" : { "Ref" : "nmspdGroup" },
+				"Cooldown" : "300",
+				"ScalingAdjustment" : "-1"
 			}
 		},
 
