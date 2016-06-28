@@ -25,6 +25,7 @@
 									"HistoricalInstanceType", "HistoricalEBSSize", "MinHistoricalInstances",
 									"HistoricalhotInstanceType", "HistoricalhotEBSSize", "MinHistoricalhotInstances",
 									"SamzaInstanceType", "SamzaEBSSize", "MinSamzaInstances",
+									"NmspdInstanceType", "NmspdEBSSize", "MinNmspdInstances",
 									"HistoricalGenericInstanceType", "HistoricalGenericEBSSize", "HistoricalGenericInstances"
 				]
 			}, {
@@ -85,6 +86,10 @@
 				"SamzaInstanceType" : { "default" : "Samza - instance size" },
 				"SamzaEBSSize" : { "default" : "Samza - EBS disk size" },
 				"MinSamzaInstances" : { "default" : "Samza - minimal number of instances" },
+
+				"NmspdInstanceType" : { "default" : "Nmspd - instance size" },
+				"NmspdEBSSize" : { "default" : "Nmspd - EBS disk size" },
+				"MinNmspdInstances" : { "default" : "Nmspd - minimal number of instances" },
 
 				"HistoricalInstanceType" : { "default" : "Historical - instance size" },
 				"HistoricalEBSSize" : { "default" : "Historical - EBS disk size" },
