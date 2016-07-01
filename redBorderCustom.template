@@ -1605,7 +1605,7 @@
 				"LaunchConfigurationName" : { "Ref" : "corezkLaunch" },
 				"LoadBalancerNames" : { "Fn::If" : [ "InternalLoadBalancerCreation", [ { "Ref" : "CoreElasticLoadBalancer" } ], { "Ref" : "AWS::NoValue" } ] },
 				"MinSize" : { "Ref" : "CorezkInstances" },
-				"MaxSize" : { "Ref" : "CorezkEBSSize"},
+				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_TERMINATE",
@@ -1647,7 +1647,7 @@
 				"BlockDeviceMappings" : [ {
 					"DeviceName" : "/dev/sda1",
 					"Ebs" : {
-						"VolumeSize" : "200",
+						"VolumeSize" : { "Ref" : "CorezkEBSSize"},
 						"VolumeType" : "gp2",
 						"DeleteOnTermination" : "true"
 					}
@@ -1750,7 +1750,7 @@
 				"LaunchConfigurationName" : { "Ref" : "kafkaLaunch" },
 				"LoadBalancerNames" : { "Fn::If" : [ "InternalLoadBalancerCreation", [ { "Ref" : "KafkaElasticLoadBalancer" } ], { "Ref" : "AWS::NoValue" } ] },
 				"MinSize" : { "Ref" : "MinKafkaInstances" },
-				"MaxSize" : { "Ref" : "KafkaEBSSize"},
+				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_TERMINATE",
@@ -1792,7 +1792,7 @@
 				"BlockDeviceMappings" : [ {
 					"DeviceName" : "/dev/sda1",
 					"Ebs" : {
-						"VolumeSize" : "50",
+						"VolumeSize" : { "Ref" : "KafkaEBSSize"},
 						"VolumeType" : "gp2",
 						"DeleteOnTermination" : "true"
 					}
@@ -1853,7 +1853,7 @@
 				"LoadBalancerNames" : [ { "Ref" : "DataElasticLoadBalancer" } ],
 				"LaunchConfigurationName" : { "Ref" : "http2kLaunch" },
 				"MinSize" : { "Ref" : "MinHttp2kInstances" },
-				"MaxSize" : { "Ref" : "Http2kEBSSize"},
+				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -1898,7 +1898,7 @@
 				"BlockDeviceMappings" : [ {
 					"DeviceName" : "/dev/sda1",
 					"Ebs" : {
-						"VolumeSize" : "50",
+						"VolumeSize" : { "Ref" : "Http2kEBSSize"},
 						"VolumeType" : "gp2",
 						"DeleteOnTermination" : "true"
 					}
@@ -2030,7 +2030,7 @@
 				"LaunchConfigurationName" : { "Ref" : "webLaunch" },
 				"LoadBalancerNames" : [ { "Ref" : "WebElasticLoadBalancer" } ],
 				"MinSize" : { "Ref" : "MinWebInstances" },
-				"MaxSize" : { "Ref" : "WebEBSSize"},
+				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -2074,7 +2074,7 @@
 				"BlockDeviceMappings" : [ {
 					"DeviceName" : "/dev/sda1",
 					"Ebs" : {
-						"VolumeSize" : "20",
+						"VolumeSize" : { "Ref" : "WebEBSSize"},
 						"VolumeType" : "gp2",
 						"DeleteOnTermination" : "true"
 					}
@@ -2207,7 +2207,7 @@
 				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "brokerLaunch" },
 				"MinSize" : { "Ref" : "MinBrokerInstances" },
-				"MaxSize" : { "Ref" : "BrokerEBSSize"},
+				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -2251,7 +2251,7 @@
 				"BlockDeviceMappings" : [ {
 					"DeviceName" : "/dev/sda1",
 					"Ebs" : {
-						"VolumeSize" : "50",
+						"VolumeSize" : { "Ref" : "BrokerEBSSize"},
 						"VolumeType" : "gp2",
 						"DeleteOnTermination" : "true"
 					}
@@ -2426,7 +2426,7 @@
 				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "middlemanagerLaunch" },
 				"MinSize" : { "Ref" : "MinMiddlemanagerInstances" },
-				"MaxSize" : { "Ref" : "MiddlemanagerEBSSize"},
+				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -2470,7 +2470,7 @@
 				"BlockDeviceMappings" : [ {
 					"DeviceName" : "/dev/sda1",
 					"Ebs" : {
-						"VolumeSize" : "50",
+						"VolumeSize" : { "Ref" : "MiddlemanagerEBSSize"},
 						"VolumeType" : "gp2",
 						"DeleteOnTermination" : "true"
 					}
@@ -2614,7 +2614,7 @@
 				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "historicalLaunch" },
 				"MinSize" : { "Ref" : "MinHistoricalInstances" },
-				"MaxSize" : { "Ref" : "HistoricalEBSSize"},
+				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -2658,7 +2658,7 @@
 				"BlockDeviceMappings" : [ {
 					"DeviceName" : "/dev/sda1",
 					"Ebs" : {
-						"VolumeSize" : "500",
+						"VolumeSize" : { "Ref" : "HistoricalEBSSize"},
 						"VolumeType" : "gp2",
 						"DeleteOnTermination" : "true"
 					}
@@ -2792,7 +2792,7 @@
 				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "historicalhotLaunch" },
 				"MinSize" : { "Ref" : "MinHistoricalhotInstances" },
-				"MaxSize" : { "Ref" : "HistoricalhotEBSSize"},
+				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -2836,7 +2836,7 @@
 				"BlockDeviceMappings" : [ {
 					"DeviceName" : "/dev/sda1",
 					"Ebs" : {
-						"VolumeSize" : "50",
+						"VolumeSize" : { "Ref" : "HistoricalhotEBSSize"},
 						"VolumeType" : "gp2",
 						"DeleteOnTermination" : "true"
 					}
@@ -2977,7 +2977,7 @@
 				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "historicalGenericLaunch" },
 				"MinSize" : { "Ref" : "HistoricalGenericInstances" },
-				"MaxSize" : { "Ref" : "HistoricalGenericEBSSize"},
+				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -3021,7 +3021,7 @@
 				"BlockDeviceMappings" : [ {
 					"DeviceName" : "/dev/sda1",
 					"Ebs" : {
-						"VolumeSize" : "500",
+						"VolumeSize" : { "Ref" : "HistoricalGenericEBSSize"},
 						"VolumeType" : "gp2",
 						"DeleteOnTermination" : "true"
 					}
@@ -3087,7 +3087,7 @@
 				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "samzaLaunch" },
 				"MinSize" : { "Ref" : "MinSamzaInstances" },
-				"MaxSize" : { "Ref" : "SamzaEBSSize"},
+				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
           			"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -3131,7 +3131,7 @@
 				"BlockDeviceMappings" : [ {
 					"DeviceName" : "/dev/sda1",
 					"Ebs" : {
-						"VolumeSize" : "50",
+						"VolumeSize" : { "Ref" : "SamzaEBSSize"},
 						"VolumeType" : "gp2",
 						"DeleteOnTermination" : "true"
 					}
@@ -3190,7 +3190,7 @@
 				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "nmspdLaunch" },
 				"MinSize" : { "Ref" : "MinNmspdInstances" },
-				"MaxSize" : { "Ref" : "NmspdEBSSize"},
+				"MaxSize" : "10",
 				"NotificationConfiguration" : {
 					"TopicARN" : { "Ref" : "SNSNotificationTopic" },
 					"NotificationTypes" : [ "autoscaling:EC2_INSTANCE_LAUNCH",
@@ -3234,7 +3234,7 @@
 				"BlockDeviceMappings" : [ {
 					"DeviceName" : "/dev/sda1",
 					"Ebs" : {
-						"VolumeSize" : "50",
+						"VolumeSize" : { "Ref" : "NmspdEBSSize"},
 						"VolumeType" : "gp2",
 						"DeleteOnTermination" : "true"
 					}
