@@ -1600,6 +1600,7 @@
 		
 		"corezkGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"DependsOn" : "AttachGateway",
 			"Properties" : {
 				"VPCZoneIdentifier" : [ { "Fn::If" : [ "CreatePublicSubnet", { "Ref" : "PublicSubnet"  }, { "Ref" : "PublicSubnetId"} ] } ],
 				"LaunchConfigurationName" : { "Ref" : "corezkLaunch" },
