@@ -1,0 +1,147 @@
+{
+	"AWSTemplateFormatVersion" : "2010-09-09",
+
+	"Description" :	"AWS CloudFormation template to deploy redBorder NG. Copyright (c) 2016 ENEO Tecnologia S.L. GNU Affero General Public License",
+
+
+	"Parameters" : {
+		"AMI" : {
+			"Description" : "AMI ID",
+			"Type" : "String",
+			"Default" : "ami-7abd0209"
+		},
+		"InstanceType" : {
+			"Description" : "Instance type",
+			"Type" : "String",
+			"AllowedValues" : [ "t2.micro", "t2.small", "t2.medium", "t2.large",
+				"m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+				"c4.large",	"c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
+				"i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
+				"d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge",
+				"r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge"
+			],
+			"Default" : "t2.small",
+			"ConstraintDescription" : "must be an allowed instance type"
+		},
+		"KeyName" : {
+			"Description" : "(REQUIRED) Name of an existing EC2 KeyPair to enable SSH access to the instances",
+			"Type" : "AWS::EC2::KeyPair::KeyName",
+			"ConstraintDescription" : "must be the name of an existing AWS EC2 KeyPair",
+			"Default" : "jenkins"
+		},
+		"VPC" : {
+			"Description" : "VPC Id",
+			"Type" : "AWS::EC2::VPC::Id",
+			"Default" : "vpc-ea40e28e"
+		},
+		"Subnet" : {
+			"Description" : "Subnet Id",
+			"Type" : "AWS::EC2::Subnet::Id",
+			"Default" : "subnet-6c52dc08"
+		},
+		"CDomain" : {
+			"Description" : "CDomain of redborder",
+			"Type" : "String",
+			"Default" : "poc.redborder.com"
+		},
+		"SyncNetCidr" : {
+			"Description" : "CIDR of subnet",
+			"Type" : "String",
+			"Default" : "10.0.1.0/24"
+		}
+	},
+
+	"Resources" : {
+
+		"SecurityGroup" : {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Properties" : {
+				"GroupDescription" : "Security group for redBorder bond1 interfaces (private interfaces)",
+				"VpcId" : { "Ref" : "VPC" },
+				"SecurityGroupIngress" : [ {
+					"CidrIp" : "0.0.0.0/0",
+					"FromPort" : "22",
+					"ToPort" : "22",
+					"IpProtocol" : "tcp"
+				} ],
+				"Tags" : [ {
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" }
+				}, {
+					"Key" : "Name",
+					"Value" : { "Fn::Join" : [ "", [
+						{ "Ref" : "AWS::StackName" }, " - rBPrivateSG" ] ] }
+				} ]
+			}
+		},
+		"SecurityGroupIngress" : {
+			"Type" : "AWS::EC2::SecurityGroupIngress",
+			"Properties" : {
+				"GroupId" : { "Ref" : "SecurityGroup" },
+				"IpProtocol" : "-1",
+				"FromPort" : "-1",
+				"ToPort" : "-1",
+				"SourceSecurityGroupId" : { "Ref" : "SecurityGroup" }
+			}
+		},
+		"LaunchConfiguration" : {
+			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Properties" : {
+				"AssociatePublicIpAddress" : "true",
+				"ImageId" : { "Ref" : "AMI" },
+				"InstanceType" : { "Ref" : "InstanceType" },
+				"InstanceMonitoring" : "false",
+				"KeyName" : { "Ref" : "KeyName" },
+				"SecurityGroups" : [ { "Ref" : "SecurityGroup" } ],
+				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+					"#cloud-config\n",
+					"write_files:\n",
+					"  - path: /var/lib/cloud/instance/user-data-config.yml\n",
+					"    content: |\n",
+					"      #HERE YOU MUST SPECIFY USER-DATA PARAMETERS IN YAML FORMAT\n",
+					"\n",
+					"      mode: full\n",
+					"      sync_net: ", { "Ref" : "SyncNetCidr"}, "\n",
+					"      cdomain: ", { "Ref" : "CDomain" }, "\n",
+					"\n",
+					"      #END OF PARAMETER SPECIFICATION\n",
+					"\n",
+					"runcmd:\n",
+					" - /usr/lib/redborder/bin/rb_cloud_init.sh\n",
+					"\n",
+					"# vim: syntax=yaml\n",
+					"#\n",
+					"# Install epel-release repository\n",
+					"#package_upgrade: true\n",
+					"packages:\n",
+					" - epel-release\n",
+					" - redborder-manager\n",
+					"# Add redborder yum repository configuration to the system\n",
+					"yum_repos:\n",
+					"    redborder-repo:\n",
+					"        baseurl: http://repo.redborder.com/\n",
+					"        enabled: true\n",
+					"        gpgcheck: false\n",
+					"        sslcheck: false\n",
+					"        name: redborder-repo\n",
+					"    epel:\n",
+					"        name: Extra Packages for Enterprise Linux 7 - $basearch\n",
+					"        baseurl: http://download.fedoraproject.org/pub/epel/7/$basearch\n",
+					"        failovermethod: priority\n",
+					"        enabled: true\n",
+					"        gpgcheck: false\n"
+				] ] } }
+			}
+		},
+		"AutoscalingGroup" : {
+			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"Properties" : {
+				"DesiredCapacity" : "2",
+				"MinSize" : "0",
+				"MaxSize" : "3",
+				"LaunchConfigurationName" : { "Ref" : "LaunchConfiguration" },
+				"VPCZoneIdentifier" : [ { "Ref" : "Subnet" } ]
+ 			}
+		}
+	}
+}
