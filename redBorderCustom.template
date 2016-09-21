@@ -10,7 +10,7 @@
 				"Parameters" : [ "AMIType", "AMIVersion", "KeyName", "CreateInternalLoadBalancers" ]
 			}, {
 				"Label" : { "default" : "Domain and certificates" },
-				"Parameters" : [ "CDOMAIN", "WebSSLCertificateName", "DataSSLCertificateName" ]
+				"Parameters" : [ "CDOMAIN", "IsACMCertificate", "WebSSLCertificateName", "DataSSLCertificateName" ]
 			}, {
 				"Label" : { "default" : "Web configuration" },
 				"Parameters" : [ "AdminPasswd" ]
@@ -56,6 +56,7 @@
 				"AdminPasswd" : { "default" : "Admin password" },
 
 				"CDOMAIN" : { "default" : "Cluster Domain" },
+				"IsACMCertificate" : { "default" : "Is an ACM Certificate?"},
 				"WebSSLCertificateName" : { "default" : "SSL certificate name for Web" },
 				"DataSSLCertificateName" : { "default" : "SSL certificate name for Data" },
 
@@ -162,6 +163,13 @@
 			"Description" : "(REQUIRED) DNS Domain for cluster",
 			"Type" : "String",
 			"Default" : ""
+		},
+
+		"IsACMCertificate" : {
+			"Description" : "Indicates if the specified certificate is an ACM certificate",
+			"Type" : "String",
+			"Default" : "false",
+			"AllowedValues" : [ "true", "false" ]
 		},
 		"WebSSLCertificateName" : {
 			"Description" : "(REQUIRED) SSL certificate name for web load balancer",
@@ -666,6 +674,9 @@
 		},
 		"AdminPasswordCreation" : {
 			"Fn::Not" : [ { "Fn::Equals" : [ "", { "Ref" : "AdminPasswd" } ] } ]
+		},
+		"ACMCertificate" : {
+			"Fn::Equals" : [ "true", { "Ref" : "IsACMCertificate" } ]
 		}
 	},
 	
@@ -1497,8 +1508,12 @@
 					"InstancePort" : "7979",
 					"Protocol" : "HTTPS",
 					"InstanceProtocol" : "HTTP",
-					"SSLCertificateId" : { "Fn::Join" : [ "", [ "arn:aws:iam::", { "Ref" : "AWS::AccountId" }, 
-						":server-certificate/", { "Ref" : "WebSSLCertificateName" } ] ] }
+					"SSLCertificateId" : { "Fn::If" : [ "ACMCertificate",
+						{ "Fn::Join" : [ "", [ "arn:aws:acm:", { "Ref" : "AWS::Region" },":", { "Ref" : "AWS::AccountId" },
+							":certificate/", { "Ref" : "WebSSLCertificateName" } ] ] },
+						{ "Fn::Join" : [ "", [ "arn:aws:iam::", { "Ref" : "AWS::AccountId" },
+							":server-certificate/", { "Ref" : "WebSSLCertificateName" } ] ] }
+					] }
 				}, {
 					"LoadBalancerPort" : "80",
 					"InstancePort" : "80", 
@@ -1529,8 +1544,12 @@
 					"InstancePort" : "7980",
 					"Protocol" : "SSL",
 					"InstanceProtocol" : "TCP",
-					"SSLCertificateId" : { "Fn::Join" : [ "", [ "arn:aws:iam::", { "Ref" : "AWS::AccountId" }, 
-						":server-certificate/", { "Ref" : "DataSSLCertificateName" } ] ] }
+					"SSLCertificateId" : { "Fn::If" : [ "ACMCertificate",
+						{ "Fn::Join" : [ "", [ "arn:aws:acm:", { "Ref" : "AWS::Region" },":", { "Ref" : "AWS::AccountId" },
+							":certificate/", { "Ref" : "WebSSLCertificateName" } ] ] },
+						{ "Fn::Join" : [ "", [ "arn:aws:iam::", { "Ref" : "AWS::AccountId" },
+							":server-certificate/", { "Ref" : "WebSSLCertificateName" } ] ] }
+					] }
 				} ],
 				"HealthCheck" : {
 					"Target" : "TCP:7980",
@@ -1558,8 +1577,12 @@
 					"InstancePort" : "7979",
 					"Protocol" : "HTTPS",
 					"InstanceProtocol" : "HTTP",
-					"SSLCertificateId" : { "Fn::Join" : [ "", [ "arn:aws:iam::", { "Ref" : "AWS::AccountId" }, 
-						":server-certificate/", { "Ref" : "WebSSLCertificateName" } ] ] }
+					"SSLCertificateId" : { "Fn::If" : [ "ACMCertificate",
+						{ "Fn::Join" : [ "", [ "arn:aws:acm:", { "Ref" : "AWS::Region" },":", { "Ref" : "AWS::AccountId" },
+							":certificate/", { "Ref" : "WebSSLCertificateName" } ] ] },
+						{ "Fn::Join" : [ "", [ "arn:aws:iam::", { "Ref" : "AWS::AccountId" },
+							":server-certificate/", { "Ref" : "WebSSLCertificateName" } ] ] }
+					] }
 				} ],
 				"HealthCheck" : {
 					"Target" : "TCP:7979",
