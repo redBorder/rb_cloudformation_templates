@@ -48,10 +48,38 @@
 			"Description" : "CIDR of subnet",
 			"Type" : "String",
 			"Default" : "10.0.1.0/24"
+		},
+		"SqlHost" : {
+			"Description" : "SQL HOST",
+			"Type" : "String",
+			"Default" : ""
+		},
+		"SqlPort" : {
+			"Description" : "SQL Port",
+			"Type" : "String",
+			"Default" : ""
+		},
+		"SqlUser" : {
+			"Description" : "SQL User",
+			"Type" : "String",
+			"Default" : ""
+		},
+		"SqlPassword" : {
+			"Description" : "SQL Password",
+			"Type" : "String",
+			"Default" : ""
 		}
+
 	},
 
 	"Resources" : {
+
+		"S3Bucket": {
+			"Type" : "AWS::S3::Bucket",
+			"Properties" : {
+				"AccessControl" : "Private"
+			}
+		},
 
 		"SecurityGroup" : {
 			"Type" : "AWS::EC2::SecurityGroup",
@@ -103,6 +131,12 @@
 					"      mode: full\n",
 					"      sync_net: ", { "Ref" : "SyncNetCidr"}, "\n",
 					"      cdomain: ", { "Ref" : "CDomain" }, "\n",
+					"	   s3_bucket: ", { "Ref" : "S3Bucket" }, "\n",
+					"      s3_endpoint: ", { "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }, "\n",
+					"	   sql_host: ", { "Ref" : "SqlHost" }, "\n",
+					"	   sql_port: 5432\n",
+					"      sql_superuser: ", { "Ref" : "SqlUser" }, "\n",
+					"	   sql_password: ", { "Ref" : "SqlPassword" }, "\n",
 					"\n",
 					"      #END OF PARAMETER SPECIFICATION\n",
 					"\n",
