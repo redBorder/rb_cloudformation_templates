@@ -171,7 +171,7 @@
 					"      mode: full\n",
 					"      sync_net: ", { "Ref" : "SyncNetCidr"}, "\n",
 					"      cdomain: ", { "Ref" : "CDomain" }, "\n",
-					"      s3bucket: ", { "Ref" : "S3Bucket" }, "\n",
+					"      s3_bucket: ", { "Ref" : "S3Bucket" }, "\n",
 					"      s3_endpoint: ", { "Fn::Join" : [ "" , [ "S3HOST=s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }, "\n",
 					"      sql_host: ", { "Ref" : "SqlHost" }, "\n",
 					"      sql_port: 5432\n",
@@ -210,7 +210,6 @@
 		"AutoscalingGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
 			"Properties" : {
-				"DesiredCapacity" : "2",
 				"MinSize" : "0",
 				"MaxSize" : "3",
 				"LaunchConfigurationName" : { "Ref" : "LaunchConfiguration" },
