@@ -262,7 +262,6 @@
 		},
 		"S3IAMUser" : {
 			"Type" : "AWS::IAM::User",
-			"DeletionPolicy" : "Retain",
 			"Properties" : {
 				"ManagedPolicyArns" : [ { "Ref" : "S3IAMPolicy" } ]
 			}
