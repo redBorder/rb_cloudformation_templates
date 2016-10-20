@@ -23,56 +23,197 @@
 			"Default" : "t2.small",
 			"ConstraintDescription" : "must be an allowed instance type"
 		},
+		"RDSInstanceType" : {
+			"Description" : "(CONDITIONAL) Indicates instance size for RDS Database. Only necessary if you choose to use RDS database",
+			"Type" : "String",
+			"AllowedValues" : [ "db.m4.large", "db.m4.xlarge", "db.m4.2xlarge", "db.m4.4xlarge", "db.m4.10xlarge",
+				"db.m3.medium", "db.m3.large", "db.m3.xlarge", "db.m3.2xlarge",
+				"db.r3.large", "db.r3.xlarge", "db.r3.2xlarge", "db.r3.4xlarge", "db.r3.8xlarge",
+				"db.t2.micro", "db.t2.small", "db.t2.medium", "db.t2.large"
+			],
+			"Default" : "db.t2.micro",
+			"ConstraintDescription" : "must be an allowed instance type"
+		},
+		"CoreInstances" : {
+			"Description" : "(REQUIRED) minimun number of nodes for corezk role",
+			"Type" : "String",
+			"AllowedValues" : [ "1", "3", "5"],
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes for corezk role must be odd and not greater than 7"
+		},
+		"ChefInstances" : {
+			"Description" : "(REQUIRED) minimun number of nodes for kafka role.",
+			"Type" : "Number",
+			"MinValue" : "1",
+			"MaxValue" : "3",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 0 and 3"
+		},
 		"KeyName" : {
 			"Description" : "(REQUIRED) Name of an existing EC2 KeyPair to enable SSH access to the instances",
 			"Type" : "AWS::EC2::KeyPair::KeyName",
 			"ConstraintDescription" : "must be the name of an existing AWS EC2 KeyPair",
 			"Default" : "jenkins"
 		},
-		"VPC" : {
+		"VPCId" : {
 			"Description" : "VPC Id",
-			"Type" : "AWS::EC2::VPC::Id",
-			"Default" : "vpc-ea40e28e"
+			"Type" : "String",
+			"Default" : ""
 		},
-		"Subnet" : {
+		"SubnetId" : {
 			"Description" : "Subnet Id",
-			"Type" : "AWS::EC2::Subnet::Id",
-			"Default" : "subnet-6c52dc08"
+			"Type" : "String",
+			"Default" : ""
+		},
+		"BackupSubnetId" : {
+			"Description" : "Subnet Id",
+			"Type" : "String",
+			"Default" : ""
 		},
 		"CDomain" : {
 			"Description" : "CDomain of redborder",
 			"Type" : "String",
 			"Default" : "poc.redborder.com"
-		},
-		"SyncNetCidr" : {
-			"Description" : "CIDR of subnet",
-			"Type" : "String",
-			"Default" : "10.0.1.0/24"
-		},
-		"SqlHost" : {
-			"Description" : "SQL Host",
-			"Type" : "String",
-			"Default" : ""
-		},
-		"SqlPort" : {
-			"Description" : "SQL Port",
-			"Type" : "String",
-			"Default" : ""
-		},
-		"SqlUser" : {
-			"Description" : "SQL User",
-			"Type" : "String",
-			"Default" : ""
-		},
-		"SqlPassword" : {
-			"Description" : "SQL Password",
-			"Type" : "String",
-			"Default" : ""
 		}
+	},
 
+	"Conditions" : {
+		"CreateVPC" : {
+			"Fn::Equals" : [ "", { "Ref" : "VPCId" } ]
+		},
+		"CreateSubnet" : {
+			"Fn::Equals" : [ "", { "Ref" : "SubnetId" } ]
+		},
+		"CreateBackupSubnet" : {
+			"Fn::Equals" : [ "", { "Ref" : "BackupSubnetId" } ]
+		}
 	},
 
 	"Resources" : {
+
+		"VPC" : {
+			"Type" : "AWS::EC2::VPC",
+			"Condition" : "CreateVPC",
+			"Properties" : {
+				"CidrBlock" : "172.16.0.0/16",
+				"EnableDnsSupport" : "true",
+				"EnableDnsHostnames" : "true",
+				"InstanceTenancy" : "default",
+				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "VPC" ] ] } } ]
+			}
+		},
+		"Subnet" : {
+			"Type" : "AWS::EC2::Subnet",
+			"Condition" : "CreateSubnet",
+			"Properties" : {
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
+				"AvailabilityZone" : { "Fn::Select" : [ 0, { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
+				"CidrBlock" : "172.16.1.0/24",
+				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "Subnet" ] ] } } ]
+			}
+		},
+		"BackupSubnet" : {
+			"Type" : "AWS::EC2::Subnet",
+			"Condition" : "CreateBackupSubnet",
+			"Properties" : {
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
+				"AvailabilityZone" : { "Fn::Select" : [ 1, { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
+				"CidrBlock" : "172.16.2.0/24",
+				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "BackupSubnet" ] ] } } ]
+			}
+		},
+		"InternetGateway" : {
+			"Type" : "AWS::EC2::InternetGateway",
+			"Condition" : "CreateVPC",
+			"Properties" : {
+				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "InternetGateway" ] ] } } ]
+			}
+		},
+		"AttachGateway" : {
+			"Type" : "AWS::EC2::VPCGatewayAttachment",
+			"Condition" : "CreateVPC",
+			"Properties" : {
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
+				"InternetGatewayId" : { "Ref" : "InternetGateway" }
+			}
+		},
+		"RouteTable" : {
+			"Type" : "AWS::EC2::RouteTable",
+			"Condition" : "CreateVPC",
+			"Properties" : {
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
+				"Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : [ " - ", [ { "Ref" : "AWS::StackName" }, "RouteTable" ] ] } } ]
+			}
+		},
+		"Route" : {
+			"Type" : "AWS::EC2::Route",
+			"Condition" : "CreateVPC",
+			"DependsOn" : "AttachGateway",
+			"Properties" : {
+				"RouteTableId" : { "Ref" : "RouteTable" },
+				"DestinationCidrBlock" : "0.0.0.0/0",
+				"GatewayId" : { "Ref" : "InternetGateway" }
+			}
+		},
+		"SubnetRouteTableAssociation" : {
+			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
+			"Condition" : "CreateVPC",
+			"Properties" : {
+				"SubnetId" : { "Fn::If" : [ "CreateSubnet", { "Ref" : "Subnet"  }, { "Ref" : "SubnetId"} ] },
+				"RouteTableId" : { "Ref" : "RouteTable" }
+			}
+		},
+		"BackupSubnetRouteTableAssociation" : {
+			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
+			"Condition" : "CreateVPC",
+			"Properties" : {
+				"SubnetId" : { "Fn::If" : [ "CreateSubnet", { "Ref" : "BackupSubnet"  }, { "Ref" : "BackupSubnetId"} ] },
+				"RouteTableId" : { "Ref" : "RouteTable" }
+			}
+		},
+
+		"PostgreRDS" : {
+			"Type" : "AWS::RDS::DBInstance",
+			"Properties" : {
+				"AllocatedStorage" : "50",
+				"DBInstanceClass" : { "Ref" : "RDSInstanceType"},
+				"Engine" : "postgres",
+				"DBName" : "redborderRDS",
+				"MasterUsername" : "rdsredborder",
+				"MasterUserPassword" : "probandoredborderng",
+				"PubliclyAccessible" : "false",
+				"BackupRetentionPeriod" : "7",
+				"MultiAZ" : "false",
+				"StorageType" : "gp2",
+				"DBSubnetGroupName" : { "Ref" : "RDSSubnetGroup" },
+				"VPCSecurityGroups" : [ { "Ref" : "RDSSecurityGroup" } ]
+
+			}
+		},
+		"RDSSubnetGroup" : {
+			"Type" : "AWS::RDS::DBSubnetGroup",
+			"Properties" : {
+				"DBSubnetGroupDescription" : "redBorder RDS subnet group",
+				"SubnetIds" : [ { "Fn::If" : [ "CreateSubnet", { "Ref" : "Subnet"  }, { "Ref" : "SubnetId"} ] }, { "Fn::If" : [ "CreateBackupSubnet", { "Ref" : "BackupSubnet"  }, { "Ref" : "BackupSubnetId"} ] } ]
+			}
+		},
+		"RDSSecurityGroup" : {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Properties" : {
+				"GroupDescription" : "Enable access to DataBase for VPC instances",
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
+				"SecurityGroupIngress" : [ {
+					"IpProtocol" : "tcp",
+					"FromPort" : "5432",
+					"ToPort" : "5432",
+					"CidrIp" : "172.16.0.0/16"
+				} ],
+				"Tags" : [ {
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" }
+				} ]
+			}
+		},
 
 		"S3Bucket": {
 			"Type" : "AWS::S3::Bucket",
@@ -93,7 +234,7 @@
 						"Action" : [ "sts:AssumeRole" ]
  					} ]
 				},
-				"ManagedPolicyArns" : [ { "Ref" : "IAMPolicy" } ],
+				"ManagedPolicyArns" : [ { "Ref" : "S3IAMPolicy" } ],
 				"Path" : "/"
 			}
 		},
@@ -104,7 +245,7 @@
 				"Roles" : [ { "Ref" : "IAMRole" } ]
 			}
 		},
-		"IAMPolicy" : {
+		"S3IAMPolicy" : {
 			"Type" : "AWS::IAM::ManagedPolicy",
 			"Properties" : {
 				"PolicyDocument" : {
@@ -117,6 +258,20 @@
 						]
 					} ]
 				}
+			}
+		},
+		"S3IAMUser" : {
+			"Type" : "AWS::IAM::User",
+			"DeletionPolicy" : "Retain",
+			"Properties" : {
+				"ManagedPolicyArns" : [ { "Ref" : "S3IAMPolicy" } ]
+			}
+		},
+		"S3IAMAccessKey" : {
+			"Type" : "AWS::IAM::AccessKey",
+			"Properties" : {
+				"Status" : "Active",
+				"UserName" : { "Ref" : "S3IAMUser" }
 			}
 		},
 
@@ -151,7 +306,7 @@
 				"SourceSecurityGroupId" : { "Ref" : "SecurityGroup" }
 			}
 		},
-		"LaunchConfiguration" : {
+		"ChefLaunchConfiguration" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
@@ -168,15 +323,17 @@
 					"    content: |\n",
 					"      #HERE YOU MUST SPECIFY USER-DATA PARAMETERS IN YAML FORMAT\n",
 					"\n",
-					"      mode: full\n",
-					"      sync_net: ", { "Ref" : "SyncNetCidr"}, "\n",
+					"      mode: chef\n",
+					"      sync_net: ", "172.16.1.0/24", "\n",
 					"      cdomain: ", { "Ref" : "CDomain" }, "\n",
 					"      s3_bucket: ", { "Ref" : "S3Bucket" }, "\n",
 					"      s3_endpoint: ", { "Fn::Join" : [ "" , [ "s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }, "\n",
-					"      sql_host: ", { "Ref" : "SqlHost" }, "\n",
-					"      sql_port: 5432\n",
-					"      sql_superuser: ", { "Ref" : "SqlUser" }, "\n",
-					"      sql_password: ", { "Ref" : "SqlPassword" }, "\n",
+					"      aws_access_key: ", { "Ref" : "S3IAMAccessKey" }, "\n",
+					"      aws_secret_key: ", { "Fn::GetAtt" : [ "S3IAMAccessKey", "SecretAccessKey" ] }, "\n",
+					"      sql_host: ", { "Fn::GetAtt" : [ "PostgreRDS", "Endpoint.Address" ] }, "\n",
+					"      sql_port: ", { "Fn::GetAtt" : [ "PostgreRDS", "Endpoint.Port" ] }, "\n",
+					"      sql_superuser: ", "rdsredborder", "\n",
+					"      sql_password: ", "probandoredborderng", "\n",
 					"\n",
 					"      #END OF PARAMETER SPECIFICATION\n",
 					"\n",
@@ -207,14 +364,109 @@
 				] ] } }
 			}
 		},
-		"AutoscalingGroup" : {
+		"ChefAutoscalingGroup" : {
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
 			"Properties" : {
-				"MinSize" : "0",
+				"MinSize" : { "Ref" : "ChefInstances" },
 				"MaxSize" : "3",
-				"LaunchConfigurationName" : { "Ref" : "LaunchConfiguration" },
-				"VPCZoneIdentifier" : [ { "Ref" : "Subnet" } ]
- 			}
+				"LaunchConfigurationName" : { "Ref" : "ChefLaunchConfiguration" },
+				"VPCZoneIdentifier" : [ { "Ref" : "Subnet" } ],
+				"Tags" : [ {
+					"Key" : "Role",
+					"Value" : "chef",
+					"PropagateAtLaunch" : "true"
+				},{
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" },
+					"PropagateAtLaunch" : "true"
+				},{
+					"Key" : "Name",
+					"Value" : { "Fn::Join" : [ "", [
+						{ "Ref" : "AWS::StackName" }, " - chef" ] ] },
+					"PropagateAtLaunch" : "true"
+				} ]
+			}
+		},
+		"CoreLaunchConfiguration" : {
+			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Properties" : {
+				"AssociatePublicIpAddress" : "true",
+				"ImageId" : { "Ref" : "AMI" },
+				"InstanceType" : { "Ref" : "InstanceType" },
+				"InstanceMonitoring" : "false",
+				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
+				"KeyName" : { "Ref" : "KeyName" },
+				"SecurityGroups" : [ { "Ref" : "SecurityGroup" } ],
+				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+					"#cloud-config\n",
+					"write_files:\n",
+					"  - path: /var/lib/cloud/instance/user-data-config.yml\n",
+					"    content: |\n",
+					"      #HERE YOU MUST SPECIFY USER-DATA PARAMETERS IN YAML FORMAT\n",
+					"\n",
+					"      mode: core\n",
+					"      sync_net: ", "172.16.1.0/24", "\n",
+					"      cdomain: ", { "Ref" : "CDomain" }, "\n",
+					"      s3_bucket: ", { "Ref" : "S3Bucket" }, "\n",
+					"      s3_endpoint: ", { "Fn::Join" : [ "" , [ "s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }, "\n",
+					"      aws_access_key: ", { "Ref" : "S3IAMAccessKey" }, "\n",
+					"      aws_secret_key: ", { "Fn::GetAtt" : [ "S3IAMAccessKey", "SecretAccessKey" ] }, "\n",
+					"      sql_host: ", { "Fn::GetAtt" : [ "PostgreRDS", "Endpoint.Address" ] }, "\n",
+					"      sql_port: ", { "Fn::GetAtt" : [ "PostgreRDS", "Endpoint.Port" ] }, "\n",
+					"      sql_superuser: ", "rdsredborder", "\n",
+					"      sql_password: ", "probandoredborderng", "\n",
+					"\n",
+					"      #END OF PARAMETER SPECIFICATION\n",
+					"\n",
+					"runcmd:\n",
+					" - /usr/lib/redborder/bin/rb_cloud_init.sh\n",
+					"\n",
+					"# vim: syntax=yaml\n",
+					"#\n",
+					"# Install epel-release repository\n",
+					"#package_upgrade: true\n",
+					"packages:\n",
+					" - epel-release\n",
+					" - redborder-manager\n",
+					"# Add redborder yum repository configuration to the system\n",
+					"yum_repos:\n",
+					"    redborder-repo:\n",
+					"        baseurl: http://repo.redborder.com/\n",
+					"        enabled: true\n",
+					"        gpgcheck: false\n",
+					"        sslcheck: false\n",
+					"        name: redborder-repo\n",
+					"    epel:\n",
+					"        name: Extra Packages for Enterprise Linux 7 - $basearch\n",
+					"        baseurl: http://download.fedoraproject.org/pub/epel/7/$basearch\n",
+					"        failovermethod: priority\n",
+					"        enabled: true\n",
+					"        gpgcheck: false\n"
+				] ] } }
+			}
+		},
+		"CoreAutoscalingGroup" : {
+			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"Properties" : {
+				"MinSize" : { "Ref" : "CoreInstances" },
+				"MaxSize" : { "Ref" : "CoreInstances" },
+				"LaunchConfigurationName" : { "Ref" : "CoreLaunchConfiguration" },
+				"VPCZoneIdentifier" : [ { "Ref" : "Subnet" } ],
+				"Tags" : [ {
+					"Key" : "Role",
+					"Value" : "core",
+					"PropagateAtLaunch" : "true"
+				},{
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" },
+					"PropagateAtLaunch" : "true"
+				},{
+					"Key" : "Name",
+					"Value" : { "Fn::Join" : [ "", [
+						{ "Ref" : "AWS::StackName" }, " - core" ] ] },
+					"PropagateAtLaunch" : "true"
+				} ]
+			}
 		}
 	}
 }
