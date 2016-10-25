@@ -45,7 +45,15 @@
 			"Description" : "(REQUIRED) minimun number of nodes for kafka role.",
 			"Type" : "Number",
 			"MinValue" : "1",
-			"MaxValue" : "3",
+			"MaxValue" : "5",
+			"Default" : "1",
+			"ConstraintDescription" : "number of nodes must between 0 and 3"
+		},
+		"KafkaInstances" : {
+			"Description" : "(REQUIRED) minimun number of nodes for kafka role.",
+			"Type" : "Number",
+			"MinValue" : "0",
+			"MaxValue" : "5",
 			"Default" : "1",
 			"ConstraintDescription" : "number of nodes must between 0 and 3"
 		},
@@ -171,14 +179,13 @@
 				"RouteTableId" : { "Ref" : "RouteTable" }
 			}
 		},
-
 		"PostgreRDS" : {
 			"Type" : "AWS::RDS::DBInstance",
 			"Properties" : {
 				"AllocatedStorage" : "50",
 				"DBInstanceClass" : { "Ref" : "RDSInstanceType"},
 				"Engine" : "postgres",
-				"DBName" : "redborderRDS",
+				"DBName" : "rdsredborder",
 				"MasterUsername" : "rdsredborder",
 				"MasterUserPassword" : "probandoredborderng",
 				"PubliclyAccessible" : "false",
@@ -186,8 +193,18 @@
 				"MultiAZ" : "false",
 				"StorageType" : "gp2",
 				"DBSubnetGroupName" : { "Ref" : "RDSSubnetGroup" },
-				"VPCSecurityGroups" : [ { "Ref" : "RDSSecurityGroup" } ]
-
+				"VPCSecurityGroups" : [ { "Ref" : "RDSSecurityGroup" } ],
+				"DBParameterGroupName" : { "Ref" : "RDSParameterGroup" }
+			}
+		},
+		"RDSParameterGroup" : {
+			"Type" : "AWS::RDS::DBParameterGroup",
+			"Properties" : {
+				"Description" : "Allow lots of connections do database",
+				"Family" : "postgres9.5",
+				"Parameters" : {
+					"max_connections" : "10000"
+				}
 			}
 		},
 		"RDSSubnetGroup" : {
@@ -284,6 +301,11 @@
 					"FromPort" : "22",
 					"ToPort" : "22",
 					"IpProtocol" : "tcp"
+				}, {
+					"CidrIp" : "0.0.0.0/0",
+					"FromPort" : "8500",
+					"ToPort" : "8500",
+					"IpProtocol" : "tcp"
 				} ],
 				"Tags" : [ {
 					"Key" : "Cluster",
@@ -367,7 +389,7 @@
 			"Type" : "AWS::AutoScaling::AutoScalingGroup",
 			"Properties" : {
 				"MinSize" : { "Ref" : "ChefInstances" },
-				"MaxSize" : "3",
+				"MaxSize" : "5",
 				"LaunchConfigurationName" : { "Ref" : "ChefLaunchConfiguration" },
 				"VPCZoneIdentifier" : [ { "Ref" : "Subnet" } ],
 				"Tags" : [ {
@@ -463,6 +485,87 @@
 					"Key" : "Name",
 					"Value" : { "Fn::Join" : [ "", [
 						{ "Ref" : "AWS::StackName" }, " - core" ] ] },
+					"PropagateAtLaunch" : "true"
+				} ]
+			}
+		},
+		"KafkaLaunchConfiguration" : {
+			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Properties" : {
+				"AssociatePublicIpAddress" : "true",
+				"ImageId" : { "Ref" : "AMI" },
+				"InstanceType" : { "Ref" : "InstanceType" },
+				"InstanceMonitoring" : "false",
+				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
+				"KeyName" : { "Ref" : "KeyName" },
+				"SecurityGroups" : [ { "Ref" : "SecurityGroup" } ],
+				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+					"#cloud-config\n",
+					"write_files:\n",
+					"  - path: /var/lib/cloud/instance/user-data-config.yml\n",
+					"    content: |\n",
+					"      #HERE YOU MUST SPECIFY USER-DATA PARAMETERS IN YAML FORMAT\n",
+					"\n",
+					"      mode: kafka\n",
+					"      sync_net: ", "172.16.1.0/24", "\n",
+					"      cdomain: ", { "Ref" : "CDomain" }, "\n",
+					"      s3_bucket: ", { "Ref" : "S3Bucket" }, "\n",
+					"      s3_endpoint: ", { "Fn::Join" : [ "" , [ "s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }, "\n",
+					"      aws_access_key: ", { "Ref" : "S3IAMAccessKey" }, "\n",
+					"      aws_secret_key: ", { "Fn::GetAtt" : [ "S3IAMAccessKey", "SecretAccessKey" ] }, "\n",
+					"      sql_host: ", { "Fn::GetAtt" : [ "PostgreRDS", "Endpoint.Address" ] }, "\n",
+					"      sql_port: ", { "Fn::GetAtt" : [ "PostgreRDS", "Endpoint.Port" ] }, "\n",
+					"      sql_superuser: ", "rdsredborder", "\n",
+					"      sql_password: ", "probandoredborderng", "\n",
+					"\n",
+					"      #END OF PARAMETER SPECIFICATION\n",
+					"\n",
+					"runcmd:\n",
+					" - /usr/lib/redborder/bin/rb_cloud_init.sh\n",
+					"\n",
+					"# vim: syntax=yaml\n",
+					"#\n",
+					"# Install epel-release repository\n",
+					"#package_upgrade: true\n",
+					"packages:\n",
+					" - epel-release\n",
+					" - redborder-manager\n",
+					"# Add redborder yum repository configuration to the system\n",
+					"yum_repos:\n",
+					"    redborder-repo:\n",
+					"        baseurl: http://repo.redborder.com/\n",
+					"        enabled: true\n",
+					"        gpgcheck: false\n",
+					"        sslcheck: false\n",
+					"        name: redborder-repo\n",
+					"    epel:\n",
+					"        name: Extra Packages for Enterprise Linux 7 - $basearch\n",
+					"        baseurl: http://download.fedoraproject.org/pub/epel/7/$basearch\n",
+					"        failovermethod: priority\n",
+					"        enabled: true\n",
+					"        gpgcheck: false\n"
+				] ] } }
+			}
+		},
+		"KafkaAutoscalingGroup" : {
+			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"Properties" : {
+				"MinSize" : { "Ref" : "KafkaInstances" },
+				"MaxSize" : "5",
+				"LaunchConfigurationName" : { "Ref" : "KafkaLaunchConfiguration" },
+				"VPCZoneIdentifier" : [ { "Ref" : "Subnet" } ],
+				"Tags" : [ {
+					"Key" : "Role",
+					"Value" : "kafka",
+					"PropagateAtLaunch" : "true"
+				},{
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" },
+					"PropagateAtLaunch" : "true"
+				},{
+					"Key" : "Name",
+					"Value" : { "Fn::Join" : [ "", [
+						{ "Ref" : "AWS::StackName" }, " - kafka" ] ] },
 					"PropagateAtLaunch" : "true"
 				} ]
 			}
