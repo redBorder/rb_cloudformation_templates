@@ -24,7 +24,7 @@
 			"ConstraintDescription" : "must be an allowed instance type"
 		},
 		"RDSInstanceType" : {
-			"Description" : "(CONDITIONAL) Indicates instance size for RDS Database. Only necessary if you choose to use RDS database",
+			"Description" : "Indicates instance size for RDS Database",
 			"Type" : "String",
 			"AllowedValues" : [ "db.m4.large", "db.m4.xlarge", "db.m4.2xlarge", "db.m4.4xlarge", "db.m4.10xlarge",
 				"db.m3.medium", "db.m3.large", "db.m3.xlarge", "db.m3.2xlarge",
@@ -32,6 +32,16 @@
 				"db.t2.micro", "db.t2.small", "db.t2.medium", "db.t2.large"
 			],
 			"Default" : "db.t2.micro",
+			"ConstraintDescription" : "must be an allowed instance type"
+		},
+		"ElasticacheInstanceType" : {
+			"Description" : "Indicates instance size for Elasticache nodes",
+			"Type" : "String",
+			"AllowedValues" : [ "cache.t2.micro", "cache.t2.small", "cache.t2.medium",
+				"cache.m3.medium", "cache.m3.large", "cache.m3.xlarge", "cache.m3.2xlarge",
+				"cache.r3.large", "cache.r3.xlarge", "cache.r3.2xlarge", "cache.r3.4xlarge", "cache.r3.8xlarge"
+			],
+			"Default" : "cache.t2.micro",
 			"ConstraintDescription" : "must be an allowed instance type"
 		},
 		"CoreInstances" : {
@@ -256,6 +266,42 @@
 			}
 		},
 
+		"ElasticacheCluster" : {
+			"Type" : "AWS::ElastiCache::CacheCluster",
+			"Properties" : {
+				"Engine" : "memcached",
+				"PreferredAvailabilityZone" :  { "Fn::Select" : [ 0, { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
+				"NumCacheNodes" : "1",
+				"CacheNodeType" : { "Ref" : "ElasticacheInstanceType" },
+				"CacheSubnetGroupName" : { "Ref" : "ElasticacheSubnetGroup" },
+				"VpcSecurityGroupIds" : [ { "Ref" : "ElasticacheSecurityGroup" } ]
+			}
+		},
+		"ElasticacheSubnetGroup" : {
+			"Type" : "AWS::ElastiCache::SubnetGroup",
+			"Properties" : {
+				"Description" : "Subnet Group for Memcached",
+				"SubnetIds" : [ { "Fn::If" : [ "CreateSubnet", { "Ref" : "Subnet"  }, { "Ref" : "SubnetId"} ] }, { "Ref" : "BackupSubnet" } ]
+			}
+		},
+		"ElasticacheSecurityGroup" : {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Properties" : {
+				"GroupDescription" : "Enable access to DataBase for VPC instances",
+				"VpcId" : { "Fn::If" : [ "CreateVPC", { "Ref" : "VPC"  }, { "Ref" : "VPCId"} ] },
+				"SecurityGroupIngress" : [ {
+					"IpProtocol" : "tcp",
+					"FromPort" : "11211",
+					"ToPort" : "11211",
+					"CidrIp" : "172.16.0.0/16"
+				} ],
+				"Tags" : [ {
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" }
+				} ]
+			}
+		},
+
 		"S3Bucket": {
 			"Type" : "AWS::S3::Bucket",
 			"Properties" : {
@@ -379,11 +425,13 @@
 					"      sql_port: ", { "Fn::GetAtt" : [ "PostgreRDS", "Endpoint.Port" ] }, "\n",
 					"      sql_superuser: ", "rdsredborder", "\n",
 					"      sql_password: ", "probandoredborderng", "\n",
+					"      elasticache_endpoint_url: ", { "Fn::GetAtt" : [ "ElasticacheCluster", "ConfigurationEndpoint.Address" ] }, "\n",
+					"      elasticache_endpoint_port: ", { "Fn::GetAtt" : [ "ElasticacheCluster", "ConfigurationEndpoint.Port" ] }, "\n",
 					"\n",
 					"      #END OF PARAMETER SPECIFICATION\n",
 					"\n",
 					"runcmd:\n",
-					" - /usr/lib/redborder/bin/rb_cloud_init.sh\n",
+					" - /usr/lib/redborder/bin/rb_cloud_init\n",
 					"\n",
 					"# vim: syntax=yaml\n",
 					"#\n",
@@ -464,7 +512,7 @@
 					"      #END OF PARAMETER SPECIFICATION\n",
 					"\n",
 					"runcmd:\n",
-					" - /usr/lib/redborder/bin/rb_cloud_init.sh\n",
+					" - /usr/lib/redborder/bin/rb_cloud_init\n",
 					"\n",
 					"# vim: syntax=yaml\n",
 					"#\n",
@@ -545,7 +593,7 @@
 					"      #END OF PARAMETER SPECIFICATION\n",
 					"\n",
 					"runcmd:\n",
-					" - /usr/lib/redborder/bin/rb_cloud_init.sh\n",
+					" - /usr/lib/redborder/bin/rb_cloud_init\n",
 					"\n",
 					"# vim: syntax=yaml\n",
 					"#\n",
@@ -626,7 +674,7 @@
 					"      #END OF PARAMETER SPECIFICATION\n",
 					"\n",
 					"runcmd:\n",
-					" - /usr/lib/redborder/bin/rb_cloud_init.sh\n",
+					" - /usr/lib/redborder/bin/rb_cloud_init\n",
 					"\n",
 					"# vim: syntax=yaml\n",
 					"#\n",
@@ -707,7 +755,7 @@
 					"      #END OF PARAMETER SPECIFICATION\n",
 					"\n",
 					"runcmd:\n",
-					" - /usr/lib/redborder/bin/rb_cloud_init.sh\n",
+					" - /usr/lib/redborder/bin/rb_cloud_init\n",
 					"\n",
 					"# vim: syntax=yaml\n",
 					"#\n",
@@ -788,7 +836,7 @@
 					"      #END OF PARAMETER SPECIFICATION\n",
 					"\n",
 					"runcmd:\n",
-					" - /usr/lib/redborder/bin/rb_cloud_init.sh\n",
+					" - /usr/lib/redborder/bin/rb_cloud_init\n",
 					"\n",
 					"# vim: syntax=yaml\n",
 					"#\n",
