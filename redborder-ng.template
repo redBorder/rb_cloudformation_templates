@@ -76,7 +76,7 @@
 			"ConstraintDescription" : "number of nodes must between 0 and 3"
 		},
 		"MiddlemanagerInstances" : {
-			"Description" : "(REQUIRED) minimun number of nodes for kafka role.",
+			"Description" : "(REQUIRED) minimun number of nodes for middlemanager role.",
 			"Type" : "Number",
 			"MinValue" : "0",
 			"MaxValue" : "5",
@@ -84,7 +84,7 @@
 			"ConstraintDescription" : "number of nodes must between 0 and 3"
 		},
 		"BrokerInstances" : {
-			"Description" : "(REQUIRED) minimun number of nodes for kafka role.",
+			"Description" : "(REQUIRED) minimun number of nodes for broker role.",
 			"Type" : "Number",
 			"MinValue" : "0",
 			"MaxValue" : "5",
@@ -92,7 +92,15 @@
 			"ConstraintDescription" : "number of nodes must between 0 and 3"
 		},
 		"HistoricalInstances" : {
-			"Description" : "(REQUIRED) minimun number of nodes for kafka role.",
+			"Description" : "(REQUIRED) minimun number of nodes for historical role.",
+			"Type" : "Number",
+			"MinValue" : "0",
+			"MaxValue" : "5",
+			"Default" : "0",
+			"ConstraintDescription" : "number of nodes must between 0 and 3"
+		},
+		"SamzaInstances" : {
+			"Description" : "(REQUIRED) minimun number of nodes for samza role.",
 			"Type" : "Number",
 			"MinValue" : "0",
 			"MaxValue" : "5",
@@ -655,7 +663,7 @@
 			"Properties" : {
 				"AssociatePublicIpAddress" : "true",
 				"ImageId" : { "Ref" : "AMI" },
-				"InstanceType" : { "Ref" : "InstanceType" },
+				"InstanceType" : "m4.large",
 				"InstanceMonitoring" : "false",
 				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
 				"KeyName" : { "Ref" : "KeyName" },
@@ -889,6 +897,87 @@
 					"Key" : "Name",
 					"Value" : { "Fn::Join" : [ "", [
 						{ "Ref" : "AWS::StackName" }, " - historical" ] ] },
+					"PropagateAtLaunch" : "true"
+				} ]
+			}
+		},
+		"SamzaLaunchConfiguration" : {
+			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Properties" : {
+				"AssociatePublicIpAddress" : "true",
+				"ImageId" : { "Ref" : "AMI" },
+				"InstanceType" : "c4.xlarge",
+				"InstanceMonitoring" : "false",
+				"IamInstanceProfile" : { "Ref" : "IAMInstanceProfile" },
+				"KeyName" : { "Ref" : "KeyName" },
+				"SecurityGroups" : [ { "Ref" : "SecurityGroup" } ],
+				"UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+					"#cloud-config\n",
+					"write_files:\n",
+					"  - path: /var/lib/cloud/instance/user-data-config.yml\n",
+					"    content: |\n",
+					"      #HERE YOU MUST SPECIFY USER-DATA PARAMETERS IN YAML FORMAT\n",
+					"\n",
+					"      mode: samza\n",
+					"      sync_net: ", "172.16.1.0/24", "\n",
+					"      cdomain: ", { "Ref" : "CDomain" }, "\n",
+					"      s3_bucket: ", { "Ref" : "S3Bucket" }, "\n",
+					"      s3_endpoint: ", { "Fn::Join" : [ "" , [ "s3-", { "Ref" : "AWS::Region" }, ".amazonaws.com\n" ] ] }, "\n",
+					"      aws_access_key: ", { "Ref" : "S3IAMAccessKey" }, "\n",
+					"      aws_secret_key: ", { "Fn::GetAtt" : [ "S3IAMAccessKey", "SecretAccessKey" ] }, "\n",
+					"      sql_host: ", { "Fn::GetAtt" : [ "PostgreRDS", "Endpoint.Address" ] }, "\n",
+					"      sql_port: ", { "Fn::GetAtt" : [ "PostgreRDS", "Endpoint.Port" ] }, "\n",
+					"      sql_superuser: ", "rdsredborder", "\n",
+					"      sql_password: ", "probandoredborderng", "\n",
+					"\n",
+					"      #END OF PARAMETER SPECIFICATION\n",
+					"\n",
+					"runcmd:\n",
+					" - /usr/lib/redborder/bin/rb_cloud_init\n",
+					"\n",
+					"# vim: syntax=yaml\n",
+					"#\n",
+					"# Install epel-release repository\n",
+					"#package_upgrade: true\n",
+					"packages:\n",
+					" - epel-release\n",
+					" - redborder-manager\n",
+					"# Add redborder yum repository configuration to the system\n",
+					"yum_repos:\n",
+					"    redborder-devel:\n",
+					"        baseurl: http://repo.redborder.com/devel\n",
+					"        enabled: true\n",
+					"        gpgcheck: false\n",
+					"        sslcheck: false\n",
+					"        name: redborder-devel\n",
+					"    epel:\n",
+					"        name: Extra Packages for Enterprise Linux 7 - $basearch\n",
+					"        baseurl: http://download.fedoraproject.org/pub/epel/7/$basearch\n",
+					"        failovermethod: priority\n",
+					"        enabled: true\n",
+					"        gpgcheck: false\n"
+				] ] } }
+			}
+		},
+		"SamzaAutoscalingGroup" : {
+			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"Properties" : {
+				"MinSize" : { "Ref" : "SamzaInstances" },
+				"MaxSize" : "5",
+				"LaunchConfigurationName" : { "Ref" : "SamzaLaunchConfiguration" },
+				"VPCZoneIdentifier" : [ { "Ref" : "Subnet" } ],
+				"Tags" : [ {
+					"Key" : "Role",
+					"Value" : "samza",
+					"PropagateAtLaunch" : "true"
+				},{
+					"Key" : "Cluster",
+					"Value" : { "Ref" : "AWS::StackName" },
+					"PropagateAtLaunch" : "true"
+				},{
+					"Key" : "Name",
+					"Value" : { "Fn::Join" : [ "", [
+						{ "Ref" : "AWS::StackName" }, " - samza" ] ] },
 					"PropagateAtLaunch" : "true"
 				} ]
 			}
